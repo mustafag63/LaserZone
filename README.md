@@ -167,19 +167,69 @@ CREATE TABLE IF NOT EXISTS users (
 
 ---
 
-## Task Progress (Mustafa Göçmen)
+## Task Progress
 
-| Task | Description | Sprint | Status |
-|------|-------------|--------|--------|
-| T-02 | Implement register/login API endpoints (JWT) | Sprint 1 | ✅ Done |
-| T-04 | Write authentication unit tests | Sprint 1 | ✅ Done |
-| T-08 | Implement reservation creation API (conflict check) | Sprint 1 | 🔲 Todo |
-| T-10 | Write reservation integration tests | Sprint 1 | 🔲 Todo |
-| T-12 | Implement open-group creation API | Sprint 1 | 🔲 Todo |
-| T-18 | Implement approve/reject join request API | Sprint 2 | 🔲 Todo |
-| T-19 | Auto-lock reservation when group is full | Sprint 2 | 🔲 Todo |
-| T-20 | Send notifications to all members on group full/approved | Sprint 2 | 🔲 Todo |
-| T-29 | Reservation history API & UI (customer) | Sprint 3 | 🔲 Todo |
+> Durum ikonları: ✅ Done · 🔄 In Progress · 🔲 Todo
+
+### Sprint 1 — Weeks 1–2
+*Auth, slot availability, standard reservation, open-group creation & join requests*
+
+| Task | Description | Assignee | Est. | Status |
+|------|-------------|----------|------|--------|
+| T-01 | Design user database schema | Begüm Rana Türkoğlu | 3h | 🔲 Todo |
+| T-02 | Implement register/login API endpoints (JWT) | Mustafa Göçmen | 4h | ✅ Done |
+| T-03 | Build register & login UI pages | Muhammet Gümüş | 4h | 🔲 Todo |
+| T-04 | Write authentication unit tests | Mustafa Göçmen | 2h | ✅ Done |
+| T-05 | Implement availability query API | Tuna Öcal | 4h | 🔲 Todo |
+| T-06 | Build calendar/slot display component | Muhammet Gümüş | 6h | 🔲 Todo |
+| T-07 | Design reservation database schema | Begüm R. Türkoğlu / Eylül S. Altunsaray | 3h | 🔲 Todo |
+| T-08 | Implement reservation creation API (conflict check) | Mustafa Göçmen | 6h | 🔲 Todo |
+| T-09 | Build reservation form UI | Muhammet Gümüş | 5h | 🔲 Todo |
+| T-10 | Write reservation integration tests | Mustafa Göçmen | 3h | 🔲 Todo |
+| T-11 | Design group reservation DB schema (open/closed, party size) | Begüm R. Türkoğlu / Eylül S. Altunsaray | 3h | 🔲 Todo |
+| T-12 | Implement open-group creation API | Mustafa Göçmen | 4h | 🔲 Todo |
+| T-13 | Build open-group creation UI for group leader | Muhammet Gümüş | 4h | 🔲 Todo |
+| T-14 | Implement open groups listing API with filters | Tuna Öcal | 3h | 🔲 Todo |
+| T-15 | Build open groups browse page & join request form | Muhammet Gümüş | 5h | 🔲 Todo |
+| T-16 | Implement join request submission API | Tuna Öcal | 3h | 🔲 Todo |
+
+### Sprint 2 — Weeks 3–4
+*Group leader approval flow, cancel/modify, e-mail notifications, admin panel*
+
+| Task | Description | Assignee | Est. | Status |
+|------|-------------|----------|------|--------|
+| T-17 | Build group leader dashboard (pending requests list) | Muhammet Gümüş | 5h | 🔲 Todo |
+| T-18 | Implement approve/reject join request API | Mustafa Göçmen | 4h | 🔲 Todo |
+| T-19 | Auto-lock reservation when group is full | Mustafa Göçmen | 3h | 🔲 Todo |
+| T-20 | Send notifications to all members on group full/approved | Mustafa Göçmen | 3h | 🔲 Todo |
+| T-21 | Implement cancel & modify reservation API endpoints | Tuna Öcal | 4h | 🔲 Todo |
+| T-22 | Build reservation management UI (customer side) | Muhammet Gümüş | 4h | 🔲 Todo |
+| T-23 | Integrate e-mail service (SendGrid/SMTP) | Tuna Öcal | 3h | 🔲 Todo |
+| T-24 | Design e-mail confirmation templates | Muhammet Gümüş | 2h | 🔲 Todo |
+| T-25 | Build admin panel – reservation list & filters | Muhammet Gümüş | 6h | 🔲 Todo |
+| T-26 | Implement admin approve/cancel operations | Eylül Sena Altunsaray | 3h | 🔲 Todo |
+| T-27 | Implement working hours & slot management API | Begüm Rana Türkoğlu | 4h | 🔲 Todo |
+| T-28 | Build admin calendar configuration UI | Muhammet Gümüş | 4h | 🔲 Todo |
+
+### Sprint 3 — Weeks 5–6
+*Reservation history, occupancy reports, real-time availability*
+
+| Task | Description | Assignee | Est. | Status |
+|------|-------------|----------|------|--------|
+| T-29 | Reservation history API & UI (customer) | Mustafa Göçmen | 4h | 🔲 Todo |
+| T-30 | Occupancy reports & chart dashboard | Begüm Rana Türkoğlu | 6h | 🔲 Todo |
+| T-31 | Real-time availability (WebSocket / polling) | Tuna Öcal | 5h | 🔲 Todo |
+| T-32 | Live update UI integration | Eylül Sena Altunsaray | 4h | 🔲 Todo |
+
+### Sprint 4 — Weeks 7–8
+*Full testing, UI polish, CI/CD deployment, final documentation*
+
+| Task | Description | Assignee | Est. | Status |
+|------|-------------|----------|------|--------|
+| T-33 | Full system testing & bug fixes | Tuna Öcal (All Team) | 6h | 🔲 Todo |
+| T-34 | UI/UX final polish & responsive design | Muhammet Gümüş | 4h | 🔲 Todo |
+| T-35 | Deployment & CI/CD setup | Tuna Öcal | 4h | 🔲 Todo |
+| T-36 | Final documentation & README | Eylül Sena Altunsaray (All Team) | 3h | 🔲 Todo |
 
 ---
 
