@@ -176,7 +176,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 | Task | Description | Assignee | Est. | Status |
 |------|-------------|----------|------|--------|
-| T-01 | Design user database schema | Begüm Rana Türkoğlu | 3h | 🔲 Todo |
+| T-01 | Design user database schema | Begüm Rana Türkoğlu | 3h | ✅  Todo |
 | T-02 | Implement register/login API endpoints (JWT) | Mustafa Göçmen | 4h | ✅ Done |
 | T-03 | Build register & login UI pages | Muhammet Gümüş | 4h | 🔲 Todo |
 | T-04 | Write authentication unit tests | Mustafa Göçmen | 2h | ✅ Done |
