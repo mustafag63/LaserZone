@@ -180,7 +180,7 @@ CREATE TABLE IF NOT EXISTS users (
 | T-02 | Implement register/login API endpoints (JWT) | Mustafa Göçmen | 4h | ✅ Done |
 | T-03 | Build register & login UI pages | Muhammet Gümüş | 4h | 🔲 Todo |
 | T-04 | Write authentication unit tests | Mustafa Göçmen | 2h | ✅ Done |
-| T-05 | Implement availability query API | Tuna Öcal | 4h | 🔲 Todo |
+| T-05 | Implement availability query API | Tuna Öcal | 4h | ✅ Done |
 | T-06 | Build calendar/slot display component | Muhammet Gümüş | 6h | 🔲 Todo |
 | T-07 | Design reservation database schema | Begüm R. Türkoğlu / Eylül S. Altunsaray | 3h | 🔲 Todo |
 | T-08 | Implement reservation creation API (conflict check) | Mustafa Göçmen | 6h | 🔲 Todo |
