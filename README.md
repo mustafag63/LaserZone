@@ -182,7 +182,7 @@ CREATE TABLE IF NOT EXISTS users (
 | T-04 | Write authentication unit tests | Mustafa Göçmen | 2h | ✅ Done |
 | T-05 | Implement availability query API | Tuna Öcal | 4h | ✅ Done |
 | T-06 | Build calendar/slot display component | Muhammet Gümüş | 6h | 🔲 Todo |
-| T-07 | Design reservation database schema | Begüm R. Türkoğlu / Eylül S. Altunsaray | 3h | 🔲 Todo |
+| T-07 | Design reservation database schema | Begüm R. Türkoğlu / Eylül S. Altunsaray | 3h | ✅ Done |
 | T-08 | Implement reservation creation API (conflict check) | Mustafa Göçmen | 6h | 🔲 Todo |
 | T-09 | Build reservation form UI | Muhammet Gümüş | 5h | 🔲 Todo |
 | T-10 | Write reservation integration tests | Mustafa Göçmen | 3h | 🔲 Todo |
