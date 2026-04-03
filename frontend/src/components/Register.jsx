@@ -85,7 +85,7 @@ export default function Register() {
         localStorage.setItem('user', JSON.stringify(data.user))
       }
 
-      navigate('/booking')
+      navigate('/reservation')
     } catch (error) {
       setGeneralError('An error occurred. Please try again later.')
       console.error('Register error:', error)

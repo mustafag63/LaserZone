@@ -78,7 +78,7 @@ export default function Login() {
         localStorage.setItem('user', JSON.stringify(data.user))
       }
 
-      navigate('/booking')
+      navigate('/reservation')
     } catch (error) {
       setGeneralError('An error occurred. Please try again later.')
       console.error('Login error:', error)
