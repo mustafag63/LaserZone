@@ -85,7 +85,11 @@ export default function Register() {
         localStorage.setItem('user', JSON.stringify(data.user))
       }
 
+<<<<<<< HEAD
       navigate('/dashboard')
+=======
+      navigate('/booking')
+>>>>>>> origin/feat/T-06-calendar-component
     } catch (error) {
       setGeneralError('An error occurred. Please try again later.')
       console.error('Register error:', error)
