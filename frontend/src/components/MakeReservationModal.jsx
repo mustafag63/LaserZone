@@ -60,7 +60,7 @@ export default function MakeReservationModal({ onClose, onSave, existingReservat
 
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('http://localhost:5000/api/reservations', {
+      const response = await fetch('http://localhost:5001/api/reservations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
