@@ -79,10 +79,14 @@ export default function Login() {
       }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
       navigate('/dashboard')
 =======
       navigate('/booking')
 >>>>>>> origin/feat/T-06-calendar-component
+=======
+      navigate('/reservation')
+>>>>>>> origin/feat/T-09-reservation-form
     } catch (error) {
       setGeneralError('An error occurred. Please try again later.')
       console.error('Login error:', error)
