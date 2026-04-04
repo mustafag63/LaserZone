@@ -38,24 +38,50 @@ laserzone/
 ├── backend/
 │   ├── src/
 │   │   ├── config/
-│   │   │   └── db.js               # MySQL connection pool
+│   │   │   └── db.js                    # MySQL connection pool
 │   │   ├── controllers/
-│   │   │   └── authController.js   # Register / Login / Me
+│   │   │   ├── authController.js        # Register / Login / Me
+│   │   │   ├── groupController.js       # Group reservation operations
+│   │   │   ├── reservationController.js # Reservation CRUD
+│   │   │   └── slotController.js        # Slot availability queries
 │   │   ├── middleware/
-│   │   │   └── authMiddleware.js   # JWT protect, adminOnly
+│   │   │   └── authMiddleware.js        # JWT protect, adminOnly
 │   │   ├── models/
-│   │   │   └── User.js             # User model (CRUD + bcrypt)
+│   │   │   ├── GroupReservation.js      # Group reservation model
+│   │   │   ├── Reservation.js           # Reservation model
+│   │   │   ├── Slot.js                  # Slot model
+│   │   │   └── User.js                  # User model (CRUD + bcrypt)
 │   │   ├── routes/
-│   │   │   └── authRoutes.js       # /api/auth routes
+│   │   │   ├── authRoutes.js            # /api/auth routes
+│   │   │   ├── groupRoutes.js           # /api/groups routes
+│   │   │   ├── reservationRoutes.js     # /api/reservations routes
+│   │   │   └── slotRoutes.js            # /api/slots routes
 │   │   ├── tests/
-│   │   │   └── auth.test.js        # Authentication unit tests
-│   │   └── app.js                  # Express app entry point
+│   │   │   ├── auth.test.js             # Authentication unit tests
+│   │   │   ├── reservation.test.js      # Reservation integration tests
+│   │   │   └── slot.test.js             # Slot availability tests
+│   │   └── app.js                       # Express app entry point
 │   ├── .env.example
 │   ├── .gitignore
 │   └── package.json
-├── frontend/                        # React app (Sprint 1 – Week 2)
-├── LaserZone_Project_Template.docx
-├── LaserZone_Initial_Work_Plan_v3.docx
+├── frontend/
+│   └── src/
+│       ├── components/
+│       │   ├── CalendarSlotPicker.jsx   # Calendar & time slot picker
+│       │   ├── Dashboard.jsx            # User dashboard
+│       │   ├── DashboardLayout.jsx      # Dashboard layout wrapper
+│       │   ├── Login.jsx                # Login page
+│       │   ├── MakeReservationModal.jsx # New reservation modal
+│       │   ├── ProtectedRoute.jsx       # Auth route guard
+│       │   ├── Register.jsx             # Register page
+│       │   ├── ReservationForm.jsx      # Reservation form
+│       │   └── Sidebar.jsx              # Sidebar navigation
+│       ├── context/
+│       │   └── AuthContext.jsx          # Auth state management
+│       └── utils/
+│           ├── api.js                   # API helper functions
+│           └── slotHelpers.js           # Slot utility functions
+├── database.sql
 └── README.md
 ```
 
@@ -78,7 +104,7 @@ cp .env.example .env
 npm run dev
 ```
 
-The API will be available at `http://localhost:5000`.
+The API will be available at `http://localhost:5001`.
 
 ### Frontend Setup
 
@@ -91,6 +117,12 @@ npm run dev
 The app will be available at `http://localhost:5173`.
 
 > **Note:** Run the backend first so the frontend can connect to the API.
+
+### Demo Login
+
+| Username | Password |
+|----------|----------|
+| `123` | `123123` |
 
 ### Run Tests
 
@@ -116,8 +148,7 @@ npm test
 #### Register – Request Body
 ```json
 {
-  "name": "Mustafa Göçmen",
-  "email": "mustafa@example.com",
+  "username": "testuser",
   "password": "secret123"
 }
 ```
@@ -127,14 +158,14 @@ npm test
 {
   "message": "Registration successful.",
   "token": "<jwt>",
-  "user": { "id": 1, "name": "Mustafa Göçmen", "email": "mustafa@example.com", "role": "customer" }
+  "user": { "id": 1, "username": "testuser", "role": "customer" }
 }
 ```
 
 #### Login – Request Body
 ```json
 {
-  "email": "mustafa@example.com",
+  "username": "testuser",
   "password": "secret123"
 }
 ```
@@ -144,7 +175,7 @@ npm test
 {
   "message": "Login successful.",
   "token": "<jwt>",
-  "user": { "id": 1, "name": "Mustafa Göçmen", "email": "mustafa@example.com", "role": "customer" }
+  "user": { "id": 1, "username": "testuser", "role": "customer" }
 }
 ```
 
@@ -156,15 +187,76 @@ npm test
 ```sql
 CREATE TABLE IF NOT EXISTS users (
   id         INT AUTO_INCREMENT PRIMARY KEY,
-  name       VARCHAR(100) NOT NULL,
-  email      VARCHAR(150) NOT NULL UNIQUE,
+  username   VARCHAR(50) NOT NULL UNIQUE,
   password   VARCHAR(255) NOT NULL,
   role       ENUM('customer', 'admin') NOT NULL DEFAULT 'customer',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
 
-> Additional tables (reservations, group_reservations, join_requests) will be added in Sprint 1 by the Database Designers.
+### `arenas`
+```sql
+CREATE TABLE arenas (
+  id          INT AUTO_INCREMENT PRIMARY KEY,
+  name        VARCHAR(100) NOT NULL,
+  capacity    INT NOT NULL,
+  hourly_rate DECIMAL(10, 2) NOT NULL,
+  description TEXT,
+  is_active   BOOLEAN DEFAULT TRUE,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### `reservations`
+```sql
+CREATE TABLE reservations (
+  id                INT AUTO_INCREMENT PRIMARY KEY,
+  user_id           INT NOT NULL,
+  arena_id          INT NOT NULL,
+  reservation_date  DATE NOT NULL,
+  start_time        TIME NOT NULL,
+  end_time          TIME NOT NULL,
+  number_of_players INT NOT NULL,
+  total_price       DECIMAL(10, 2) NOT NULL,
+  status            ENUM('pending','confirmed','cancelled','completed') DEFAULT 'pending',
+  created_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at        TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id)  REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (arena_id) REFERENCES arenas(id) ON DELETE RESTRICT
+);
+```
+
+### `group_reservations`
+```sql
+CREATE TABLE group_reservations (
+  id               INT AUTO_INCREMENT PRIMARY KEY,
+  leader_user_id   INT NOT NULL,
+  reservation_name VARCHAR(100) NOT NULL,
+  reservation_date DATE NOT NULL,
+  start_time       TIME NOT NULL,
+  end_time         TIME NOT NULL,
+  party_size       INT NOT NULL,
+  current_count    INT NOT NULL DEFAULT 0,
+  status           ENUM('open','closed','cancelled') NOT NULL DEFAULT 'open',
+  created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (leader_user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
+
+### `join_requests`
+```sql
+CREATE TABLE join_requests (
+  id                   INT AUTO_INCREMENT PRIMARY KEY,
+  group_reservation_id INT NOT NULL,
+  user_id              INT NOT NULL,
+  player_count         INT NOT NULL,
+  status               ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY unique_request (group_reservation_id, user_id),
+  FOREIGN KEY (group_reservation_id) REFERENCES group_reservations(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
 
 ---
 
