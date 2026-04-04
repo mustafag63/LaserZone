@@ -39,16 +39,16 @@ export async function apiCall(endpoint, options = {}) {
   }
 }
 
-export async function loginUser(email, password) {
+export async function loginUser(username, password) {
   return apiCall('/api/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ username, password }),
   })
 }
 
-export async function registerUser(name, email, password) {
+export async function registerUser(username, password) {
   return apiCall('/api/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ name, email, password }),
+    body: JSON.stringify({ username, password }),
   })
 }

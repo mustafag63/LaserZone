@@ -6,7 +6,7 @@ const User = require('../models/User');
 
 const generateToken = (user) => {
   return jwt.sign(
-    { id: user.id, email: user.email, role: user.role },
+    { id: user.id, username: user.username, role: user.role },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
@@ -15,28 +15,32 @@ const generateToken = (user) => {
 // POST /api/auth/register
 const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { username, password } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: 'Name, email and password are required.' });
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required.' });
+    }
+
+    if (username.length < 3) {
+      return res.status(400).json({ message: 'Username must be at least 3 characters.' });
     }
 
     if (password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters.' });
     }
 
-    const existing = await User.findByEmail(email);
+    const existing = await User.findByUsername(username);
     if (existing) {
-      return res.status(409).json({ message: 'Email is already registered.' });
+      return res.status(409).json({ message: 'Username is already taken.' });
     }
 
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ username, password });
     const token = generateToken(user);
 
     return res.status(201).json({
       message: 'Registration successful.',
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: { id: user.id, username: user.username, role: user.role },
     });
   } catch (err) {
     console.error('[register]', err.message);
@@ -47,13 +51,13 @@ const register = async (req, res) => {
 // POST /api/auth/login
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required.' });
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required.' });
     }
 
-    const user = await User.findByEmail(email);
+    const user = await User.findByUsername(username);
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials.' });
     }
@@ -68,7 +72,7 @@ const login = async (req, res) => {
     return res.status(200).json({
       message: 'Login successful.',
       token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+      user: { id: user.id, username: user.username, role: user.role },
     });
   } catch (err) {
     console.error('[login]', err.message);

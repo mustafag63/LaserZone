@@ -2,14 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import Login from './components/Login'
 import Register from './components/Register'
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
-import ReservationForm from './components/ReservationForm'
->>>>>>> origin/feat/T-09-reservation-form
-import BookingDemo from './components/BookingDemo'
->>>>>>> origin/feat/T-06-calendar-component
+import Dashboard from './components/Dashboard'
+import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
 function App() {
@@ -19,16 +13,15 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
-          <Route path="/reservation" element={<ReservationForm />} />
->>>>>>> origin/feat/T-09-reservation-form
-          <Route path="/booking" element={<BookingDemo />} />
->>>>>>> origin/feat/T-06-calendar-component
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/" element={<Navigate to="/login" replace />} />
-          {/* Add more routes here as needed (dashboard, etc.) */}
         </Routes>
       </AuthProvider>
     </BrowserRouter>

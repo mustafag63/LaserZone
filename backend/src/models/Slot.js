@@ -13,14 +13,15 @@ const Slot = {
   async createTable() {
     const sql = `
       CREATE TABLE IF NOT EXISTS reservations (
-        id             INT AUTO_INCREMENT PRIMARY KEY,
-        user_id        INT NOT NULL,
+        id               INT AUTO_INCREMENT PRIMARY KEY,
+        user_id          INT NOT NULL,
+        reservation_name VARCHAR(100) NOT NULL DEFAULT '',
         reservation_date DATE NOT NULL,
-        start_time     TIME NOT NULL,
-        end_time       TIME NOT NULL,
-        player_count   INT NOT NULL DEFAULT 1,
-        status         ENUM('active', 'cancelled') NOT NULL DEFAULT 'active',
-        created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        start_time       TIME NOT NULL,
+        end_time         TIME NOT NULL,
+        player_count     INT NOT NULL DEFAULT 3,
+        status           ENUM('active', 'cancelled') NOT NULL DEFAULT 'active',
+        created_at       TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
       )
     `;

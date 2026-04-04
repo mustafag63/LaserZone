@@ -56,3 +56,35 @@ CREATE TABLE payments (
     -- İlişkiler (Foreign Keys)
     FOREIGN KEY (reservation_id) REFERENCES reservations(id) ON DELETE CASCADE
 );
+
+-- 4. Grup Rezervasyonlar Tablosu (Group Reservations) — T-11
+-- Grup lideri açık bir rezervasyon oluşturur; diğer kullanıcılar katılım isteği gönderebilir
+CREATE TABLE group_reservations (
+    id                  INT AUTO_INCREMENT PRIMARY KEY,
+    leader_user_id      INT NOT NULL,                          -- Grubu oluşturan lider (FK)
+    reservation_name    VARCHAR(100) NOT NULL,                 -- Grup adı
+    reservation_date    DATE NOT NULL,                         -- Oyun günü
+    start_time          TIME NOT NULL,                         -- Başlangıç saati
+    end_time            TIME NOT NULL,                         -- Bitiş saati
+    party_size          INT NOT NULL,                          -- Maksimum oyuncu sayısı (3–20)
+    current_count       INT NOT NULL DEFAULT 0,                -- Onaylanan oyuncu sayısı (lider dahil)
+    status              ENUM('open','closed','cancelled') NOT NULL DEFAULT 'open',
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (leader_user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 5. Katılım İstekleri Tablosu (Join Requests) — T-11
+-- Kullanıcıların açık grup rezervasyonlarına katılım talepleri
+CREATE TABLE join_requests (
+    id                      INT AUTO_INCREMENT PRIMARY KEY,
+    group_reservation_id    INT NOT NULL,                      -- Hangi gruba katılmak istiyor (FK)
+    user_id                 INT NOT NULL,                      -- Katılmak isteyen kullanıcı (FK)
+    player_count            INT NOT NULL,                      -- Kaç oyuncu getireceği
+    status                  ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+    created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    UNIQUE KEY unique_request (group_reservation_id, user_id), -- Aynı gruba tekrar istek gönderilemez
+    FOREIGN KEY (group_reservation_id) REFERENCES group_reservations(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

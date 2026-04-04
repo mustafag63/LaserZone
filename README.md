@@ -80,12 +80,26 @@ npm run dev
 
 The API will be available at `http://localhost:5000`.
 
+### Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The app will be available at `http://localhost:5173`.
+
+> **Note:** Run the backend first so the frontend can connect to the API.
+
 ### Run Tests
 
 ```bash
 cd backend
 npm test
 ```
+
+**Test Suites:** 3 · **Tests:** 44 (Auth: 12, Slot Availability: 11, Reservation: 21)
 
 ---
 
@@ -176,18 +190,18 @@ CREATE TABLE IF NOT EXISTS users (
 
 | Task | Description | Assignee | Est. | Status |
 |------|-------------|----------|------|--------|
-| T-01 | Design user database schema | Begüm Rana Türkoğlu | 3h | ✅  Todo |
+| T-01 | Design user database schema | Begüm Rana Türkoğlu | 3h | ✅ Done |
 | T-02 | Implement register/login API endpoints (JWT) | Mustafa Göçmen | 4h | ✅ Done |
-| T-03 | Build register & login UI pages | Muhammet Gümüş | 4h | 🔲 Todo |
+| T-03 | Build register & login UI pages | Muhammet Gümüş | 4h | ✅ Done |
 | T-04 | Write authentication unit tests | Mustafa Göçmen | 2h | ✅ Done |
 | T-05 | Implement availability query API | Tuna Öcal | 4h | ✅ Done |
-| T-06 | Build calendar/slot display component | Muhammet Gümüş | 6h | 🔲 Todo |
-| T-07 | Design reservation database schema | Begüm R. Türkoğlu / Eylül S. Altunsaray | 3h | 🔲 Todo |
-| T-08 | Implement reservation creation API (conflict check) | Mustafa Göçmen | 6h | 🔲 Todo |
-| T-09 | Build reservation form UI | Muhammet Gümüş | 5h | 🔲 Todo |
-| T-10 | Write reservation integration tests | Mustafa Göçmen | 3h | 🔲 Todo |
-| T-11 | Design group reservation DB schema (open/closed, party size) | Begüm R. Türkoğlu / Eylül S. Altunsaray | 3h | 🔲 Todo |
-| T-12 | Implement open-group creation API | Mustafa Göçmen | 4h | 🔲 Todo |
+| T-06 | Build calendar/slot display component | Muhammet Gümüş | 6h | ✅ Done |
+| T-07 | Design reservation database schema | Begüm R. Türkoğlu / Eylül S. Altunsaray | 3h | ✅ Done |
+| T-08 | Implement reservation creation API (conflict check) | Mustafa Göçmen | 6h | ✅ Done |
+| T-09 | Build reservation form UI | Muhammet Gümüş | 5h | ✅ Done |
+| T-10 | Write reservation integration tests | Mustafa Göçmen | 3h | ✅ Done |
+| T-11 | Design group reservation DB schema (open/closed, party size) | Begüm R. Türkoğlu / Eylül S. Altunsaray | 3h | ✅ Done |
+| T-12 | Implement open-group creation API | Mustafa Göçmen | 4h | ✅ Done |
 | T-13 | Build open-group creation UI for group leader | Muhammet Gümüş | 4h | 🔲 Todo |
 | T-14 | Implement open groups listing API with filters | Tuna Öcal | 3h | 🔲 Todo |
 | T-15 | Build open groups browse page & join request form | Muhammet Gümüş | 5h | 🔲 Todo |
@@ -216,7 +230,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 | Task | Description | Assignee | Est. | Status |
 |------|-------------|----------|------|--------|
-| T-29 | Reservation history API & UI (customer) | Mustafa Göçmen | 4h | 🔲 Todo |
+| T-29 | Reservation history API & UI (customer) | Mustafa Göçmen | 4h | ✅ Done |
 | T-30 | Occupancy reports & chart dashboard | Begüm Rana Türkoğlu | 6h | 🔲 Todo |
 | T-31 | Real-time availability (WebSocket / polling) | Tuna Öcal | 5h | 🔲 Todo |
 | T-32 | Live update UI integration | Eylül Sena Altunsaray | 4h | 🔲 Todo |
