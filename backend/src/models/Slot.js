@@ -34,9 +34,18 @@ const Slot = {
   generateSlots(date) {
     const slots = [];
     for (let hour = DEFAULT_OPEN_HOUR; hour < DEFAULT_CLOSE_HOUR; hour++) {
-      const startTime = `${String(hour).padStart(2, '0')}:00:00`;
-      const endTime = `${String(hour + 1).padStart(2, '0')}:00:00`;
-      slots.push({ date, start_time: startTime, end_time: endTime });
+      for (const minute of [0, 30]) {
+        const startH = String(hour).padStart(2, '0');
+        const startM = String(minute).padStart(2, '0');
+        const endMinute = minute + 30;
+        const endH = endMinute === 60 ? String(hour + 1).padStart(2, '0') : startH;
+        const endM = endMinute === 60 ? '00' : '30';
+        slots.push({
+          date,
+          start_time: `${startH}:${startM}:00`,
+          end_time: `${endH}:${endM}:00`,
+        });
+      }
     }
     return slots;
   },
@@ -46,9 +55,9 @@ const Slot = {
    */
   async getBookedCounts(date) {
     const sql = `
-      SELECT start_time, end_time, COALESCE(SUM(player_count), 0) AS booked
+      SELECT start_time, end_time, COALESCE(SUM(number_of_players), 0) AS booked
       FROM reservations
-      WHERE reservation_date = ? AND status = 'active'
+      WHERE reservation_date = ? AND status IN ('pending', 'confirmed')
       GROUP BY start_time, end_time
     `;
     const [rows] = await pool.execute(sql, [date]);

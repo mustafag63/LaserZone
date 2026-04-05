@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import CalendarSlotPicker from './CalendarSlotPicker'
-import { generateMockSlots } from '../utils/slotHelpers'
 
 export default function MakeReservationModal({ onClose, onSave, existingReservations = [] }) {
   const [reservationName, setReservationName] = useState('')
@@ -10,19 +9,43 @@ export default function MakeReservationModal({ onClose, onSave, existingReservat
   const [errors, setErrors] = useState({})
   const [slots, setSlots] = useState([])
 
-  // Build slot list with already-reserved slots marked as booked
+  // Fetch real availability from API
   useEffect(() => {
-    const startDate = new Date()
-    const generated = generateMockSlots(startDate, 7)
+    const fetchSlots = async () => {
+      const startDate = new Date()
+      const endDate = new Date()
+      endDate.setDate(endDate.getDate() + 6)
 
-    const withLocked = generated.map(slot => {
-      const isReserved = existingReservations.some(
-        r => r.date === slot.date && r.time === slot.time
-      )
-      return isReserved ? { ...slot, status: 'booked' } : slot
-    })
+      const fmt = d => d.toISOString().split('T')[0]
 
-    setSlots(withLocked)
+      try {
+        const res = await fetch(
+          `http://localhost:5001/api/slots/availability?start_date=${fmt(startDate)}&end_date=${fmt(endDate)}`
+        )
+        const data = await res.json()
+
+        const mapped = []
+        Object.entries(data.availability || {}).forEach(([date, daySlots]) => {
+          daySlots.forEach(slot => {
+            const time = slot.start_time.slice(0, 5) // "HH:MM"
+            const isReserved = existingReservations.some(
+              r => r.date === date && r.time === time
+            )
+            mapped.push({
+              date,
+              time,
+              status: isReserved || !slot.is_available ? 'booked' : 'available',
+            })
+          })
+        })
+
+        setSlots(mapped)
+      } catch {
+        setSlots([])
+      }
+    }
+
+    fetchSlots()
   }, [existingReservations])
 
   const handleSlotSelect = (date, time) => {

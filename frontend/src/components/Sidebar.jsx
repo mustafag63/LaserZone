@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
@@ -19,6 +20,7 @@ function getAvatarColor(username) {
 export default function Sidebar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const [collapsed, setCollapsed] = useState(true)
 
   const handleLogout = () => {
     logout()
@@ -29,54 +31,77 @@ export default function Sidebar() {
   const initial = user?.username?.[0]?.toUpperCase() ?? '?'
 
   return (
-    <aside className="w-64 min-h-screen bg-gray-900 flex flex-col border-r border-gray-800">
-      {/* Logo */}
-      <div className="px-6 py-5 border-b border-gray-800">
-        <h1 className="text-xl font-bold text-white tracking-wide">
-          Laser<span className="text-purple-400">Zone</span>
-        </h1>
+    <aside
+      className={`${collapsed ? 'w-16' : 'w-64'} min-h-screen bg-gray-900 flex flex-col border-r border-gray-800 transition-all duration-300`}
+    >
+      {/* Logo + Toggle */}
+      <div className="px-3 py-5 border-b border-gray-800 flex items-center justify-between">
+        {!collapsed && (
+          <h1 className="text-xl font-bold text-white tracking-wide">
+            Laser<span className="text-purple-400">Zone</span>
+          </h1>
+        )}
+        <button
+          onClick={() => setCollapsed(!collapsed)}
+          className={`${collapsed ? 'mx-auto' : ''} p-1.5 rounded-lg text-gray-400 hover:bg-gray-800 hover:text-white transition-colors`}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {collapsed ? (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            ) : (
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M19 19l-7-7 7-7" />
+            )}
+          </svg>
+        </button>
       </div>
 
       {/* User Info */}
-      <div className="px-6 py-5 border-b border-gray-800 flex items-center gap-3">
-        <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-lg`}>
+      <div className={`px-3 py-5 border-b border-gray-800 flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>
+        <div
+          className={`w-11 h-11 rounded-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-lg`}
+          title={user?.username}
+        >
           {initial}
         </div>
-        <div className="overflow-hidden">
-          <p className="text-white font-semibold text-sm truncate">{user?.username ?? 'User'}</p>
-          <p className="text-gray-400 text-xs capitalize">{user?.role ?? 'customer'}</p>
-        </div>
+        {!collapsed && (
+          <div className="overflow-hidden">
+            <p className="text-white font-semibold text-sm truncate">{user?.username ?? 'User'}</p>
+            <p className="text-gray-400 text-xs capitalize">{user?.role ?? 'customer'}</p>
+          </div>
+        )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-2 py-4 space-y-1">
         <NavLink
           to="/dashboard"
           className={({ isActive }) =>
-            `flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+            `flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg text-sm font-medium transition-colors ${
               isActive
                 ? 'bg-purple-600 text-white'
                 : 'text-gray-400 hover:bg-gray-800 hover:text-white'
             }`
           }
+          title={collapsed ? 'My Reservations' : ''}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
           </svg>
-          My Reservations
+          {!collapsed && 'My Reservations'}
         </NavLink>
       </nav>
 
       {/* Logout */}
-      <div className="px-3 py-4 border-t border-gray-800">
+      <div className="px-2 py-4 border-t border-gray-800">
         <button
           onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-red-400 transition-colors"
+          title={collapsed ? 'Logout' : ''}
+          className={`w-full flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:bg-gray-800 hover:text-red-400 transition-colors`}
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          Logout
+          {!collapsed && 'Logout'}
         </button>
       </div>
     </aside>

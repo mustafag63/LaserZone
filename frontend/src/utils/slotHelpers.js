@@ -36,11 +36,11 @@ export const formatDate = (dateStr) => {
 
 // Helper function to format time to 12-hour format
 export const format12HourTime = (time24) => {
-  const [hour] = time24.split(':')
+  const [hour, minute] = time24.split(':')
   const hourNum = parseInt(hour)
   const ampm = hourNum >= 12 ? 'PM' : 'AM'
   const hour12 = hourNum % 12 || 12
-  return `${hour12}:00 ${ampm}`
+  return `${hour12}:${minute} ${ampm}`
 }
 
 // Helper function to get day of week
