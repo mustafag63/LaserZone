@@ -3,6 +3,8 @@ import { AuthProvider } from './context/AuthContext'
 import Login from './components/Login'
 import Register from './components/Register'
 import Dashboard from './components/Dashboard'
+import CreateOpenGroup from './components/CreateOpenGroup'
+import GroupPage from './components/GroupPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
@@ -18,6 +20,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/groups/create"
+            element={
+              <ProtectedRoute>
+                <CreateOpenGroup />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/groups/:id"
+            element={
+              <ProtectedRoute>
+                <GroupPage />
               </ProtectedRoute>
             }
           />
