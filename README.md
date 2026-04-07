@@ -302,9 +302,9 @@ _Auth, slot availability, standard reservation, open-group creation & join reque
 | T-11 | Design group reservation DB schema (open/closed, party size) | Begüm R. Türkoğlu / Eylül S. Altunsaray | 3h   | ✅ Done |
 | T-12 | Implement open-group creation API                            | Mustafa Göçmen                          | 4h   | ✅ Done |
 | T-13 | Build open-group creation UI for group leader                | Muhammet Gümüş                          | 4h   | ✅ Done |
-| T-14 | Implement open groups listing API with filters               | Tuna Öcal                               | 3h   | 🔲 Todo |
+| T-14 | Implement open groups listing API with filters               | Tuna Öcal                               | 3h   | ✅ Done |
 | T-15 | Build open groups browse page & join request form            | Muhammet Gümüş                          | 5h   | ✅ Done |
-| T-16 | Implement join request submission API                        | Tuna Öcal                               | 3h   | 🔲 Todo |
+| T-16 | Implement join request submission API                        | Tuna Öcal                               | 3h   | ✅ Done |
 
 ### Sprint 2 — Weeks 3–4
 
