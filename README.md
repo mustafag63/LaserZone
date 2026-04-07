@@ -181,56 +181,6 @@ npm test
   "token": "<jwt>",
   "user": { "id": 1, "username": "testuser", "role": "customer" }
 }
-```
-
-### Groups (`/api/groups`)
-
-| Method | Endpoint          | Auth       | Description                                      |
-| ------ | ----------------- | ---------- | ------------------------------------------------ |
-| POST   | `/`               | Bearer JWT | Create a new open group reservation               |
-| GET    | `/`               | Bearer JWT | List open groups (supports filters)               |
-| GET    | `/my`             | Bearer JWT | List groups created by the current user            |
-| GET    | `/:id`            | Bearer JWT | Get a single group by ID                          |
-| DELETE | `/:id`            | Bearer JWT | Cancel a group (leader only)                      |
-| POST   | `/:id/join`       | Bearer JWT | Submit a join request for a group                 |
-| GET    | `/:id/requests`   | Bearer JWT | List join requests for a group (leader only)      |
-
-#### List Open Groups – Query Filters
-
-| Parameter      | Type   | Description                        |
-| -------------- | ------ | ---------------------------------- |
-| `date`         | string | Filter by date (`YYYY-MM-DD`)      |
-| `search`       | string | Search by group name               |
-| `minPartySize` | int    | Minimum party size                 |
-| `maxPartySize` | int    | Maximum party size                 |
-| `availableOnly`| string | `true` to show only joinable groups|
-
-**Example:** `GET /api/groups?date=2026-04-10&search=arena&availableOnly=true`
-
-#### Submit Join Request – Request Body
-
-```json
-{
-  "playerCount": 2
-}
-```
-
-#### Submit Join Request – Response `201`
-
-```json
-{
-  "message": "Join request submitted successfully.",
-  "joinRequest": {
-    "id": 1,
-    "groupReservationId": 5,
-    "userId": 3,
-    "playerCount": 2,
-    "status": "pending"
-  }
-}
-```
-
----
 
 ## Database Schema
 
@@ -352,9 +302,9 @@ _Auth, slot availability, standard reservation, open-group creation & join reque
 | T-11 | Design group reservation DB schema (open/closed, party size) | Begüm R. Türkoğlu / Eylül S. Altunsaray | 3h   | ✅ Done |
 | T-12 | Implement open-group creation API                            | Mustafa Göçmen                          | 4h   | ✅ Done |
 | T-13 | Build open-group creation UI for group leader                | Muhammet Gümüş                          | 4h   | ✅ Done |
-| T-14 | Implement open groups listing API with filters               | Tuna Öcal                               | 3h   | ✅ Done |
+| T-14 | Implement open groups listing API with filters               | Tuna Öcal                               | 3h   | 🔲 Todo |
 | T-15 | Build open groups browse page & join request form            | Muhammet Gümüş                          | 5h   | ✅ Done |
-| T-16 | Implement join request submission API                        | Tuna Öcal                               | 3h   | ✅ Done |
+| T-16 | Implement join request submission API                        | Tuna Öcal                               | 3h   | 🔲 Todo |
 
 ### Sprint 2 — Weeks 3–4
 
