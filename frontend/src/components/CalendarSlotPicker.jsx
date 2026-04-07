@@ -1,15 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { formatDate, format12HourTime, getDayOfWeek, generateMockSlots } from '../utils/slotHelpers'
 
 export default function CalendarSlotPicker({
   onSlotSelect,
-  startDate = new Date(),
+  startDate: startDateProp,
   daysAhead = 7,
   mockSlots = null,
 }) {
-  const [selectedDate, setSelectedDate] = useState(
-    startDate.toISOString().split('T')[0]
-  )
+  const startDate = useMemo(() => startDateProp || new Date(), [startDateProp])
+  const startDateStr = useMemo(() => startDate.toISOString().split('T')[0], [startDate])
+
+  const [selectedDate, setSelectedDate] = useState(startDateStr)
   const [selectedTime, setSelectedTime] = useState(null)
   const [dates, setDates] = useState([])
   const [slots, setSlots] = useState([])
@@ -24,13 +25,13 @@ export default function CalendarSlotPicker({
       generatedDates.push(date.toISOString().split('T')[0])
     }
     setDates(generatedDates)
-  }, [startDate, daysAhead])
+  }, [startDateStr, daysAhead])
 
   // Load mock slots
   useEffect(() => {
     const loadedSlots = mockSlots || generateMockSlots(startDate, daysAhead)
     setSlots(loadedSlots)
-  }, [mockSlots, startDate, daysAhead])
+  }, [mockSlots, startDateStr, daysAhead])
 
   // Update time slots when selected date changes
   useEffect(() => {

@@ -101,7 +101,7 @@ export default function Dashboard() {
                   <div>
                     <p className="text-white font-semibold">{r.name}</p>
                     <p className="text-gray-400 text-sm mt-0.5">
-                      {formatDate(r.date)} · {format12Hour(r.time)} · {r.players} players
+                      {formatDate(r.date)} · {format12Hour(r.startTime || r.time)} · {r.players} players
                     </p>
                   </div>
                 </div>

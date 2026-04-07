@@ -60,10 +60,45 @@ const create = async (req, res) => {
   }
 };
 
-// GET /api/groups
+// GET /api/groups — T-14 | Tuna Öcal | Sprint 1
+// Supports query filters: ?date=YYYY-MM-DD&search=name&minPartySize=3&maxPartySize=10&availableOnly=true
 const listOpen = async (req, res) => {
   try {
-    const groups = await GroupReservation.findOpen();
+    const { date, search, minPartySize, maxPartySize, availableOnly } = req.query;
+    const filters = {};
+
+    if (date) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({ message: 'Invalid date format. Use YYYY-MM-DD.' });
+      }
+      filters.date = date;
+    }
+
+    if (search && search.trim()) {
+      filters.search = search.trim();
+    }
+
+    if (minPartySize) {
+      const val = parseInt(minPartySize);
+      if (isNaN(val) || val < 1) {
+        return res.status(400).json({ message: 'minPartySize must be a positive integer.' });
+      }
+      filters.minPartySize = val;
+    }
+
+    if (maxPartySize) {
+      const val = parseInt(maxPartySize);
+      if (isNaN(val) || val < 1) {
+        return res.status(400).json({ message: 'maxPartySize must be a positive integer.' });
+      }
+      filters.maxPartySize = val;
+    }
+
+    if (availableOnly) {
+      filters.availableOnly = availableOnly;
+    }
+
+    const groups = await GroupReservation.findOpen(filters);
     return res.status(200).json({ groups });
   } catch (err) {
     console.error('[listOpenGroups]', err.message);
@@ -114,4 +149,84 @@ const cancel = async (req, res) => {
   }
 };
 
-module.exports = { create, listOpen, listMine, getOne, cancel };
+// POST /api/groups/:id/join — T-16 | Tuna Öcal | Sprint 1
+// Submit a join request for an open group
+const submitJoinRequest = async (req, res) => {
+  try {
+    const groupId = parseInt(req.params.id);
+    if (isNaN(groupId)) return res.status(400).json({ message: 'Invalid group ID.' });
+
+    const { playerCount } = req.body;
+    const userId = req.user.id;
+
+    if (!playerCount || isNaN(parseInt(playerCount)) || parseInt(playerCount) < 1) {
+      return res.status(400).json({ message: 'playerCount must be a positive integer.' });
+    }
+
+    const parsedPlayerCount = parseInt(playerCount);
+
+    // Check group exists and is open
+    const group = await GroupReservation.findById(groupId);
+    if (!group) return res.status(404).json({ message: 'Group not found.' });
+    if (group.status !== 'open') return res.status(400).json({ message: 'This group is no longer accepting join requests.' });
+
+    // Cannot join own group
+    if (group.leaderUserId === userId) {
+      return res.status(400).json({ message: 'You cannot join your own group.' });
+    }
+
+    // Check available spots
+    const availableSpots = group.partySize - group.currentCount;
+    if (parsedPlayerCount > availableSpots) {
+      return res.status(400).json({
+        message: `Not enough spots. Available: ${availableSpots}, requested: ${parsedPlayerCount}.`,
+      });
+    }
+
+    // Check for existing request
+    const existing = await GroupReservation.findJoinRequest(groupId, userId);
+    if (existing) {
+      return res.status(409).json({
+        message: `You already have a ${existing.status} join request for this group.`,
+      });
+    }
+
+    const joinRequest = await GroupReservation.createJoinRequest({
+      groupReservationId: groupId,
+      userId,
+      playerCount: parsedPlayerCount,
+    });
+
+    return res.status(201).json({
+      message: 'Join request submitted successfully.',
+      joinRequest,
+    });
+  } catch (err) {
+    console.error('[submitJoinRequest]', err.message);
+    return res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
+// GET /api/groups/:id/requests — T-16 | Tuna Öcal | Sprint 1
+// List join requests for a group (leader only)
+const listJoinRequests = async (req, res) => {
+  try {
+    const groupId = parseInt(req.params.id);
+    if (isNaN(groupId)) return res.status(400).json({ message: 'Invalid group ID.' });
+
+    const group = await GroupReservation.findById(groupId);
+    if (!group) return res.status(404).json({ message: 'Group not found.' });
+
+    if (group.leaderUserId !== req.user.id) {
+      return res.status(403).json({ message: 'Only the group leader can view join requests.' });
+    }
+
+    const requests = await GroupReservation.findJoinRequestsByGroup(groupId);
+    return res.status(200).json({ requests });
+  } catch (err) {
+    console.error('[listJoinRequests]', err.message);
+    return res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
+module.exports = { create, listOpen, listMine, getOne, cancel, submitJoinRequest, listJoinRequests };

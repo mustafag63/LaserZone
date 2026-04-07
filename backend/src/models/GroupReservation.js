@@ -62,8 +62,35 @@ const GroupReservation = {
     };
   },
 
-  // List all open groups (for browsing)
-  async findOpen() {
+  // List all open groups (for browsing) with optional filters
+  async findOpen(filters = {}) {
+    const conditions = ["g.status = 'open'"];
+    const params = [];
+
+    if (filters.date) {
+      conditions.push('g.reservation_date = ?');
+      params.push(filters.date);
+    }
+
+    if (filters.search) {
+      conditions.push('g.reservation_name LIKE ?');
+      params.push(`%${filters.search}%`);
+    }
+
+    if (filters.minPartySize) {
+      conditions.push('g.party_size >= ?');
+      params.push(parseInt(filters.minPartySize));
+    }
+
+    if (filters.maxPartySize) {
+      conditions.push('g.party_size <= ?');
+      params.push(parseInt(filters.maxPartySize));
+    }
+
+    if (filters.availableOnly === 'true') {
+      conditions.push('g.current_count < g.party_size');
+    }
+
     const [rows] = await pool.execute(
       `SELECT g.id, g.reservation_name AS name, g.reservation_date AS date,
               g.start_time AS startTime, g.end_time AS endTime,
@@ -72,8 +99,9 @@ const GroupReservation = {
               u.username AS leaderUsername
        FROM group_reservations g
        JOIN users u ON u.id = g.leader_user_id
-       WHERE g.status = 'open'
-       ORDER BY g.reservation_date ASC, g.start_time ASC`
+       WHERE ${conditions.join(' AND ')}
+       ORDER BY g.reservation_date ASC, g.start_time ASC`,
+      params
     );
     return rows;
   },
@@ -128,6 +156,49 @@ const GroupReservation = {
       [newCount, newStatus, id]
     );
     return newStatus;
+  },
+
+  // --- Join Requests (T-16 | Tuna Öcal) ---
+
+  // Create a join request
+  async createJoinRequest({ groupReservationId, userId, playerCount }) {
+    const [result] = await pool.execute(
+      `INSERT INTO join_requests (group_reservation_id, user_id, player_count)
+       VALUES (?, ?, ?)`,
+      [groupReservationId, userId, playerCount]
+    );
+    return {
+      id: result.insertId,
+      groupReservationId,
+      userId,
+      playerCount,
+      status: 'pending',
+    };
+  },
+
+  // Check if a user already has a pending/approved request for this group
+  async findJoinRequest(groupReservationId, userId) {
+    const [rows] = await pool.execute(
+      `SELECT id, status, player_count AS playerCount
+       FROM join_requests
+       WHERE group_reservation_id = ? AND user_id = ?`,
+      [groupReservationId, userId]
+    );
+    return rows[0] || null;
+  },
+
+  // List join requests for a group
+  async findJoinRequestsByGroup(groupReservationId) {
+    const [rows] = await pool.execute(
+      `SELECT jr.id, jr.user_id AS userId, u.username, jr.player_count AS playerCount,
+              jr.status, jr.created_at
+       FROM join_requests jr
+       JOIN users u ON u.id = jr.user_id
+       WHERE jr.group_reservation_id = ?
+       ORDER BY jr.created_at ASC`,
+      [groupReservationId]
+    );
+    return rows;
   },
 };
 
