@@ -55,9 +55,9 @@ const Slot = {
    */
   async getBookedCounts(date) {
     const sql = `
-      SELECT start_time, end_time, COALESCE(SUM(number_of_players), 0) AS booked
+      SELECT start_time, end_time, COALESCE(SUM(player_count), 0) AS booked
       FROM reservations
-      WHERE reservation_date = ? AND status IN ('pending', 'confirmed')
+      WHERE reservation_date = ? AND status = 'active'
       GROUP BY start_time, end_time
     `;
     const [rows] = await pool.execute(sql, [date]);
