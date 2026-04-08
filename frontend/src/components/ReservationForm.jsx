@@ -5,8 +5,8 @@ import { useAuth } from '../context/AuthContext'
 import { formatDate, format12HourTime } from '../utils/slotHelpers'
 
 const PRICE_PER_PLAYER = 15 // placeholder pricing in USD
-const MIN_PLAYERS = 1
-const MAX_PLAYERS = 10
+const MIN_PLAYERS = 3
+const MAX_PLAYERS = 20
 
 export default function ReservationForm() {
   const { token } = useAuth()
@@ -16,7 +16,8 @@ export default function ReservationForm() {
   const [selectedTime, setSelectedTime] = useState(null)
 
   // Form state
-  const [playerCount, setPlayerCount] = useState(2)
+  const [reservationName, setReservationName] = useState('')
+  const [playerCount, setPlayerCount] = useState(3)
   const [specialRequests, setSpecialRequests] = useState('')
 
   // Submission state
@@ -29,6 +30,9 @@ export default function ReservationForm() {
 
   const validate = () => {
     const errors = {}
+    if (!reservationName.trim() || reservationName.trim().length < 2) {
+      errors.reservationName = 'Reservation name must be at least 2 characters'
+    }
     if (!selectedDate) errors.slot = 'Please select a date'
     else if (!selectedTime) errors.slot = 'Please select a time slot'
     if (playerCount < MIN_PLAYERS || playerCount > MAX_PLAYERS) {
@@ -76,10 +80,10 @@ export default function ReservationForm() {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
+            name: reservationName.trim(),
             date: selectedDate,
             time: selectedTime,
-            playerCount,
-            specialRequests: specialRequests.trim() || null,
+            players: playerCount,
           }),
         }
       )
@@ -104,7 +108,8 @@ export default function ReservationForm() {
     setShowSuccessModal(false)
     setSelectedDate(null)
     setSelectedTime(null)
-    setPlayerCount(2)
+    setReservationName('')
+    setPlayerCount(3)
     setSpecialRequests('')
     setValidationErrors({})
   }
@@ -221,6 +226,37 @@ export default function ReservationForm() {
               )}
 
               <form onSubmit={handleSubmit} noValidate className="space-y-5">
+
+                {/* Reservation Name */}
+                <div>
+                  <label
+                    htmlFor="reservationName"
+                    className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+                  >
+                    Reservation Name
+                  </label>
+                  <input
+                    id="reservationName"
+                    type="text"
+                    value={reservationName}
+                    onChange={e => {
+                      setReservationName(e.target.value)
+                      setValidationErrors(prev => ({ ...prev, reservationName: undefined }))
+                    }}
+                    placeholder="e.g. Birthday Party, Team Night"
+                    maxLength={100}
+                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:text-white transition ${
+                      validationErrors.reservationName
+                        ? 'border-red-500'
+                        : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                  />
+                  {validationErrors.reservationName && (
+                    <p role="alert" className="mt-1 text-sm text-red-600 dark:text-red-400">
+                      {validationErrors.reservationName}
+                    </p>
+                  )}
+                </div>
 
                 {/* Player Count */}
                 <fieldset>

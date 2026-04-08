@@ -25,20 +25,17 @@ CREATE TABLE IF NOT EXISTS arenas (
 );
 
 -- 2. Rezervasyonlar Tablosu (Reservations)
--- Kullanıcılar ve Oyun Alanları arasındaki ilişkiyi kurar
 CREATE TABLE IF NOT EXISTS reservations (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,                   -- Rezervasyonu yapan kullanıcı (Foreign Key)
-    reservation_name VARCHAR(100) NOT NULL, -- Rezervasyon adı
-    reservation_date DATE NOT NULL,         -- Rezervasyonun oynanacağı gün
-    start_time TIME NOT NULL,               -- Oyun başlangıç saati
-    end_time TIME NOT NULL,                 -- Oyun bitiş saati
-    player_count INT NOT NULL,              -- Oyuncu sayısı
-    status ENUM('active', 'cancelled', 'completed') DEFAULT 'active', -- Rezervasyon durumu
+    user_id INT NOT NULL,
+    reservation_name VARCHAR(100) NOT NULL,
+    reservation_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    player_count INT NOT NULL,
+    status ENUM('active', 'cancelled', 'completed') DEFAULT 'active',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-
-    -- İlişkiler (Foreign Keys)
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
