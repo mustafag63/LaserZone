@@ -1,14 +1,16 @@
--- Mevcut Veritabanınız ve Kullanıcılar Tablosu
--- CREATE DATABASE laserzone;
--- USE laserzone;
+-- Veritabanı kurulumu
+CREATE DATABASE IF NOT EXISTS laserzone;
+USE laserzone;
 
--- CREATE TABLE users (
---     id INT AUTO_INCREMENT PRIMARY KEY,
---     name VARCHAR(100),
---     email VARCHAR(100) UNIQUE,
---     password VARCHAR(255),
---     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
--- );
+-- 0. Kullanıcılar Tablosu (Users) — diğer tablolar buraya bağlı, önce bu oluşturulmalı
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('user', 'admin') DEFAULT 'user',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
 -- 1. Oyun Alanları / Odalar Tablosu (Arenas)
 -- Hangi arenada/odada rezervasyon yapılacağını belirlemek için
