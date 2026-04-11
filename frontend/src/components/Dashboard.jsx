@@ -18,6 +18,7 @@ function format12Hour(time24) {
 export default function Dashboard() {
   const [reservations, setReservations] = useState([])
   const [showModal, setShowModal] = useState(false)
+  const [cancellingId, setCancellingId] = useState(null)
 
   // Load from API, fall back to localStorage
   useEffect(() => {
@@ -45,6 +46,25 @@ export default function Dashboard() {
     }
     load()
   }, [])
+
+  const handleCancel = async (id) => {
+    if (!window.confirm('Cancel this reservation?')) return
+    setCancellingId(id)
+    try {
+      const token = localStorage.getItem('token')
+      const res = await fetch(`http://localhost:5001/api/reservations/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: token ? `Bearer ${token}` : '' },
+      })
+      if (res.ok) {
+        const updated = reservations.filter(r => r.id !== id)
+        setReservations(updated)
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+      }
+    } catch { /* ignore */ } finally {
+      setCancellingId(null)
+    }
+  }
 
   const saveReservation = (newReservation) => {
     const updated = [newReservation, ...reservations]
@@ -106,13 +126,13 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* Locked badge */}
-                <span className="flex items-center gap-1.5 px-3 py-1 bg-gray-700 rounded-full text-xs font-medium text-gray-300">
-                  <svg className="w-3.5 h-3.5 text-yellow-400" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M17 11V7a5 5 0 00-10 0v4H5v10h14V11h-2zm-6 6v-2.5a1.5 1.5 0 113 0V17h-3zm4-6H9V7a3 3 0 016 0v4z" />
-                  </svg>
-                  Locked
-                </span>
+                <button
+                  onClick={() => handleCancel(r.id)}
+                  disabled={cancellingId === r.id}
+                  className="px-3 py-1.5 text-xs font-medium bg-red-900/40 hover:bg-red-800/60 text-red-400 hover:text-red-300 border border-red-800 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {cancellingId === r.id ? 'Cancelling…' : 'Cancel'}
+                </button>
               </div>
             ))}
           </div>

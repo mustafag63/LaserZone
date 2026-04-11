@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import ProfileModal from './ProfileModal'
 
 const AVATAR_COLORS = [
   'from-purple-500 to-pink-500',
@@ -21,6 +22,7 @@ export default function Sidebar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(true)
+  const [showProfile, setShowProfile] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -29,8 +31,11 @@ export default function Sidebar() {
 
   const avatarColor = getAvatarColor(user?.username)
   const initial = user?.username?.[0]?.toUpperCase() ?? '?'
+  const savedAvatar = user?.id ? localStorage.getItem(`lz_avatar_${user.id}`) : null
 
   return (
+    <>
+    {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
     <aside
       className={`${collapsed ? 'w-16' : 'w-64'} min-h-screen bg-gray-900 flex flex-col border-r border-gray-800 transition-all duration-300`}
     >
@@ -56,20 +61,31 @@ export default function Sidebar() {
       </div>
 
       {/* User Info */}
-      <div className={`px-3 py-5 border-b border-gray-800 flex items-center ${collapsed ? 'justify-center' : 'gap-3'}`}>
-        <div
-          className={`w-11 h-11 rounded-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-lg`}
-          title={user?.username}
-        >
-          {initial}
-        </div>
+      <button
+        onClick={() => setShowProfile(true)}
+        className={`px-3 py-5 border-b border-gray-800 flex items-center w-full text-left hover:bg-gray-800 transition-colors ${collapsed ? 'justify-center' : 'gap-3'}`}
+        title="View profile"
+      >
+        {savedAvatar ? (
+          <img
+            src={savedAvatar}
+            alt="avatar"
+            className="w-11 h-11 rounded-full object-cover flex-shrink-0 shadow-lg"
+          />
+        ) : (
+          <div
+            className={`w-11 h-11 rounded-full bg-gradient-to-br ${avatarColor} flex items-center justify-center text-white font-bold text-lg flex-shrink-0 shadow-lg`}
+          >
+            {initial}
+          </div>
+        )}
         {!collapsed && (
           <div className="overflow-hidden">
             <p className="text-white font-semibold text-sm truncate">{user?.username ?? 'User'}</p>
             <p className="text-gray-400 text-xs capitalize">{user?.role ?? 'customer'}</p>
           </div>
         )}
-      </div>
+      </button>
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-4 space-y-1">
@@ -122,5 +138,6 @@ export default function Sidebar() {
         </button>
       </div>
     </aside>
+    </>
   )
 }

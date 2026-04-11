@@ -92,8 +92,10 @@ const GroupReservation = {
     }
 
     const [rows] = await pool.execute(
-      `SELECT g.id, g.reservation_name AS name, g.reservation_date AS date,
-              g.start_time AS startTime, g.end_time AS endTime,
+      `SELECT g.id, g.reservation_name AS name,
+              DATE_FORMAT(g.reservation_date, '%Y-%m-%d') AS date,
+              TIME_FORMAT(g.start_time, '%H:%i') AS startTime,
+              TIME_FORMAT(g.end_time, '%H:%i') AS endTime,
               g.party_size AS partySize, g.current_count AS currentCount,
               g.status, g.created_at,
               u.username AS leaderUsername
@@ -110,8 +112,10 @@ const GroupReservation = {
   async findById(id) {
     const [rows] = await pool.execute(
       `SELECT g.id, g.leader_user_id AS leaderUserId,
-              g.reservation_name AS name, g.reservation_date AS date,
-              g.start_time AS startTime, g.end_time AS endTime,
+              g.reservation_name AS name,
+              DATE_FORMAT(g.reservation_date, '%Y-%m-%d') AS date,
+              TIME_FORMAT(g.start_time, '%H:%i') AS startTime,
+              TIME_FORMAT(g.end_time, '%H:%i') AS endTime,
               g.party_size AS partySize, g.current_count AS currentCount,
               g.status, g.created_at,
               u.username AS leaderUsername
@@ -126,8 +130,10 @@ const GroupReservation = {
   // Get groups led by a specific user
   async findByLeader(leaderUserId) {
     const [rows] = await pool.execute(
-      `SELECT id, reservation_name AS name, reservation_date AS date,
-              start_time AS startTime, end_time AS endTime,
+      `SELECT id, reservation_name AS name,
+              DATE_FORMAT(reservation_date, '%Y-%m-%d') AS date,
+              TIME_FORMAT(start_time, '%H:%i') AS startTime,
+              TIME_FORMAT(end_time, '%H:%i') AS endTime,
               party_size AS partySize, current_count AS currentCount,
               status, created_at
        FROM group_reservations

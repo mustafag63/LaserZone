@@ -48,8 +48,10 @@ const Reservation = {
   // GET /api/reservations/my
   async findByUserId(userId) {
     const [rows] = await pool.execute(
-      `SELECT id, reservation_name AS name, reservation_date AS date,
-              start_time AS startTime, end_time AS endTime,
+      `SELECT id, reservation_name AS name,
+              DATE_FORMAT(reservation_date, '%Y-%m-%d') AS date,
+              TIME_FORMAT(start_time, '%H:%i') AS startTime,
+              TIME_FORMAT(end_time, '%H:%i') AS endTime,
               player_count AS players, status, created_at
        FROM reservations
        WHERE user_id = ? AND status = 'active'
@@ -62,8 +64,10 @@ const Reservation = {
   // GET /api/reservations/:id
   async findById(id) {
     const [rows] = await pool.execute(
-      `SELECT id, user_id, reservation_name AS name, reservation_date AS date,
-              start_time AS startTime, end_time AS endTime,
+      `SELECT id, user_id, reservation_name AS name,
+              DATE_FORMAT(reservation_date, '%Y-%m-%d') AS date,
+              TIME_FORMAT(start_time, '%H:%i') AS startTime,
+              TIME_FORMAT(end_time, '%H:%i') AS endTime,
               player_count AS players, status, created_at
        FROM reservations WHERE id = ?`,
       [id]
