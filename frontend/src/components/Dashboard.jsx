@@ -24,7 +24,7 @@ export default function Dashboard() {
     const load = async () => {
       try {
         const token = localStorage.getItem('token')
-        const res = await fetch('http://localhost:5001/api/reservations/my', {
+        const res = await fetch('http://localhost:5000/api/reservations/my', {
           headers: { Authorization: token ? `Bearer ${token}` : '' },
         })
         if (res.ok) {

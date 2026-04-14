@@ -68,7 +68,7 @@ export default function ReservationForm() {
     setIsSubmitting(true)
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}/api/reservations`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/reservations`,
         {
           method: 'POST',
           headers: {

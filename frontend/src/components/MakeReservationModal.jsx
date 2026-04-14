@@ -20,7 +20,7 @@ export default function MakeReservationModal({ onClose, onSave, existingReservat
 
       try {
         const res = await fetch(
-          `http://localhost:5001/api/slots/availability?start_date=${fmt(startDate)}&end_date=${fmt(endDate)}`
+          `http://localhost:5000/api/slots/availability?start_date=${fmt(startDate)}&end_date=${fmt(endDate)}`
         )
         const data = await res.json()
 
@@ -83,7 +83,7 @@ export default function MakeReservationModal({ onClose, onSave, existingReservat
 
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch('http://localhost:5001/api/reservations', {
+      const response = await fetch('http://localhost:5000/api/reservations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

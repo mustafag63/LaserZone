@@ -106,6 +106,23 @@ export default function Sidebar() {
           </svg>
           {!collapsed && 'Browse Groups'}
         </NavLink>
+
+        <NavLink
+          to="/my-groups"
+          className={({ isActive }) =>
+            `flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              isActive
+                ? 'bg-purple-600 text-white'
+                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+            }`
+          }
+          title={collapsed ? 'Gruplarım' : ''}
+        >
+          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+          </svg>
+          {!collapsed && 'Gruplarım'}
+        </NavLink>
       </nav>
 
       {/* Logout */}

@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(echo \"Backend PID: $!\")",
+      "Bash(echo \"Frontend PID: $!\")",
+      "Read(//tmp/**)",
+      "Bash(pkill -f \"nodemon src/app.js\")",
+      "Bash(pkill -f \"node src/app.js\")",
+      "Bash(netstat -ano)",
+      "Bash(xargs -I{} taskkill /PID {} /F)",
+      "Bash(cmd:*)",
+      "Bash(kill -9 1704 1840 1781 1812 1768 1862)",
+      "Bash(node src/app.js)",
+      "Bash(node:*)",
+      "Bash(powershell:*)",
+      "Bash(mysql:*)",
+      "mcp__ide__getDiagnostics"
+    ]
+  }
+}
