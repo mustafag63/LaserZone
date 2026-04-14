@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import DashboardLayout from './DashboardLayout'
 import { apiCall } from '../utils/api'
+import CreateGroupModal from './CreateGroupModal'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -357,6 +358,7 @@ export default function GroupLeaderDashboard() {
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [toast, setToast] = useState(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type, id: Date.now() })
@@ -388,16 +390,27 @@ export default function GroupLeaderDashboard() {
             <h2 className="text-2xl font-bold text-white">Gruplarım</h2>
             <p className="text-gray-400 text-sm mt-1">Oluşturduğun grup rezervasyonlarını yönet</p>
           </div>
-          <button
-            onClick={fetchGroups}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-sm font-medium rounded-lg transition disabled:opacity-50"
-          >
-            <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Yenile
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchGroups}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-gray-300 text-sm font-medium rounded-lg transition disabled:opacity-50"
+            >
+              <svg className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Yenile
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-lg text-sm transition shadow-lg"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Grup Oluştur
+            </button>
+          </div>
         </div>
 
         {/* Loading */}
@@ -430,6 +443,18 @@ export default function GroupLeaderDashboard() {
           </div>
         )}
       </div>
+
+      {/* Create Group Modal */}
+      {showCreateModal && (
+        <CreateGroupModal
+          onClose={() => setShowCreateModal(false)}
+          onCreated={(newGroup) => {
+            setShowCreateModal(false)
+            setGroups(prev => [newGroup, ...prev])
+            showToast('Grup başarıyla oluşturuldu!')
+          }}
+        />
+      )}
 
       {/* Toast */}
       {toast && (
