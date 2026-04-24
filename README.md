@@ -42,18 +42,21 @@ laserzone/
 │   │   ├── controllers/
 │   │   │   ├── authController.js        # Register / Login / Me
 │   │   │   ├── groupController.js       # Group reservation operations
+│   │   │   ├── notificationController.js# Notification CRUD & mark-read
 │   │   │   ├── reservationController.js # Reservation CRUD
 │   │   │   └── slotController.js        # Slot availability queries
 │   │   ├── middleware/
 │   │   │   └── authMiddleware.js        # JWT protect, adminOnly
 │   │   ├── models/
 │   │   │   ├── GroupReservation.js      # Group reservation model
+│   │   │   ├── Notification.js          # Notification model
 │   │   │   ├── Reservation.js           # Reservation model
 │   │   │   ├── Slot.js                  # Slot model
 │   │   │   └── User.js                  # User model (CRUD + bcrypt)
 │   │   ├── routes/
 │   │   │   ├── authRoutes.js            # /api/auth routes
 │   │   │   ├── groupRoutes.js           # /api/groups routes
+│   │   │   ├── notificationRoutes.js    # /api/notifications routes
 │   │   │   ├── reservationRoutes.js     # /api/reservations routes
 │   │   │   └── slotRoutes.js            # /api/slots routes
 │   │   ├── tests/
@@ -67,15 +70,20 @@ laserzone/
 ├── frontend/
 │   └── src/
 │       ├── components/
+│       │   ├── BookingDemo.jsx          # Booking demo/preview
+│       │   ├── BrowseGroups.jsx         # Open groups browse page (Turkish date/time, progress bar, join flow, filters)
 │       │   ├── CalendarSlotPicker.jsx   # Calendar & time slot picker
 │       │   ├── Dashboard.jsx            # User dashboard
 │       │   ├── DashboardLayout.jsx      # Dashboard layout wrapper
 │       │   ├── Login.jsx                # Login page
-│       │   ├── MakeReservationModal.jsx # New reservation modal
+│       │   ├── MakeReservationModal.jsx # New reservation modal (Open/Closed toggle + live capacity preview)
+│       │   ├── NotificationBell.jsx     # Bell icon, unread badge, dropdown, 5 notification types, 30s polling
+│       │   ├── ProfileModal.jsx         # User profile modal
 │       │   ├── ProtectedRoute.jsx       # Auth route guard
 │       │   ├── Register.jsx             # Register page
 │       │   ├── ReservationForm.jsx      # Reservation form
-│       │   └── Sidebar.jsx              # Sidebar navigation
+│       │   ├── Sidebar.jsx              # Sidebar navigation
+│       │   └── SuccessModal.jsx         # Success confirmation modal
 │       ├── context/
 │       │   └── AuthContext.jsx          # Auth state management
 │       └── utils/
@@ -181,6 +189,17 @@ npm test
   "token": "<jwt>",
   "user": { "id": 1, "username": "testuser", "role": "customer" }
 }
+```
+
+### Notifications (`/api/notifications`)
+
+| Method | Endpoint         | Auth       | Description                          |
+| ------ | ---------------- | ---------- | ------------------------------------ |
+| GET    | `/`              | Bearer JWT | Get all notifications for the user   |
+| PATCH  | `/:id/read`      | Bearer JWT | Mark a single notification as read   |
+| PATCH  | `/read-all`      | Bearer JWT | Mark all notifications as read       |
+
+---
 
 ## Database Schema
 
@@ -264,6 +283,20 @@ CREATE TABLE join_requests (
 );
 ```
 
+### `notifications`
+
+```sql
+CREATE TABLE notifications (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT NOT NULL,
+  type       ENUM('join_request','request_approved','request_rejected','group_full','group_cancelled') NOT NULL,
+  message    TEXT NOT NULL,
+  is_read    BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+```
+
 ---
 
 ## Sprint Plan
@@ -275,7 +308,7 @@ CREATE TABLE join_requests (
 | Sprint 3 | 5–6   | Reservation history, occupancy reports, real-time availability                     |
 | Sprint 4 | 7–8   | Full testing, UI polish, CI/CD deployment, final documentation                     |
 
-**Total:** 13 User Stories · 97 Story Points · 36 Tasks
+**Total:** 13 User Stories · 97 Story Points · 39 Tasks
 
 ---
 
@@ -287,43 +320,47 @@ CREATE TABLE join_requests (
 
 _Auth, slot availability, standard reservation, open-group creation & join requests_
 
-| Task | Description                                                  | Assignee                                | Est. | Status  |
-| ---- | ------------------------------------------------------------ | --------------------------------------- | ---- | ------- |
-| T-01 | Design user database schema                                  | Begüm Rana Türkoğlu                     | 3h   | ✅ Done |
-| T-02 | Implement register/login API endpoints (JWT)                 | Mustafa Göçmen                          | 4h   | ✅ Done |
-| T-03 | Build register & login UI pages                              | Muhammet Gümüş                          | 4h   | ✅ Done |
-| T-04 | Write authentication unit tests                              | Mustafa Göçmen                          | 2h   | ✅ Done |
-| T-05 | Implement availability query API                             | Tuna Öcal                               | 4h   | ✅ Done |
-| T-06 | Build calendar/slot display component                        | Muhammet Gümüş                          | 6h   | ✅ Done |
-| T-07 | Design reservation database schema                           | Begüm R. Türkoğlu / Eylül S. Altunsaray | 3h   | ✅ Done |
-| T-08 | Implement reservation creation API (conflict check)          | Mustafa Göçmen                          | 6h   | ✅ Done |
-| T-09 | Build reservation form UI                                    | Muhammet Gümüş                          | 5h   | ✅ Done |
-| T-10 | Write reservation integration tests                          | Mustafa Göçmen                          | 3h   | ✅ Done |
-| T-11 | Design group reservation DB schema (open/closed, party size) | Begüm R. Türkoğlu / Eylül S. Altunsaray | 3h   | ✅ Done |
-| T-12 | Implement open-group creation API                            | Mustafa Göçmen                          | 4h   | ✅ Done |
-| T-13 | Build open-group creation UI for group leader                | Muhammet Gümüş                          | 4h   | ✅ Done |
-| T-14 | Implement open groups listing API with filters               | Tuna Öcal                               | 3h   | ✅ Done |
-| T-15 | Build open groups browse page & join request form            | Muhammet Gümüş                          | 5h   | ✅ Done |
-| T-16 | Implement join request submission API                        | Tuna Öcal                               | 3h   | ✅ Done |
+| Task | Description                                                                                                         | Assignee                                | Est. | Status          |
+| ---- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------- | ---- | --------------- |
+| T-01 | Design user database schema                                                                                         | Begüm Rana Türkoğlu                     | 3h   | ✅ Done         |
+| T-02 | Implement register/login API endpoints (JWT)                                                                        | Mustafa Göçmen                          | 4h   | ✅ Done         |
+| T-03 | Build register & login UI pages                                                                                     | Muhammet Gümüş                          | 4h   | ✅ Done         |
+| T-04 | Write authentication unit tests                                                                                     | Mustafa Göçmen                          | 2h   | ✅ Done         |
+| T-05 | Implement availability query API                                                                                    | Tuna Öcal                               | 4h   | ✅ Done         |
+| T-06 | Build calendar/slot display component                                                                               | Muhammet Gümüş                          | 6h   | ✅ Done         |
+| T-07 | Design reservation database schema                                                                                  | Begüm R. Türkoğlu / Eylül S. Altunsaray | 3h   | ✅ Done         |
+| T-08 | Implement reservation creation API (conflict check)                                                                 | Mustafa Göçmen                          | 6h   | ✅ Done         |
+| T-09 | Build reservation form UI                                                                                           | Muhammet Gümüş                          | 5h   | ✅ Done         |
+| T-10 | Write reservation integration tests                                                                                 | Mustafa Göçmen                          | 3h   | ✅ Done         |
+| T-11 | Design group reservation DB schema (open/closed, party size)                                                        | Begüm R. Türkoğlu / Eylül S. Altunsaray | 3h   | ✅ Done         |
+| T-12 | Implement open-group creation API                                                                                   | Mustafa Göçmen                          | 4h   | ✅ Done         |
+| T-13 | Build open-group creation UI for group leader                                                                       | Muhammet Gümüş                          | 4h   | ✅ Done         |
+| T-14 | Implement open groups listing API with filters                                                                      | Tuna Öcal                               | 3h   | ✅ Done         |
+| T-15 | Build open groups browse page & join request form                                                                   | Muhammet Gümüş                          | 5h   | ✅ Done         |
+| T-16 | Implement join request submission API                                                                               | Tuna Öcal                               | 3h   | ✅ Done         |
+| T-37 | Enhance group creation UI: Open/Closed toggle + live capacity preview ("8 kişiyle açıyorsan +2 gerekiyor" mesajı)  | Muhammet Gümüş                          | 3h   | 🔄 In Progress  |
+| T-38 | Enhance browse page: Türkçe gün adlı tarih/saat, progress bar'lı kapasite, "Katılmak İstiyorum" akışı, filtreleme | Muhammet Gümüş                          | 5h   | 🔄 In Progress  |
 
 ### Sprint 2 — Weeks 3–4
 
 _Group leader approval flow, cancel/modify, e-mail notifications, admin panel_
 
-| Task | Description                                              | Assignee              | Est. | Status  |
-| ---- | -------------------------------------------------------- | --------------------- | ---- | ------- |
-| T-17 | Build group leader dashboard (pending requests list)     | Muhammet Gümüş        | 5h   | 🔲 Todo |
-| T-18 | Implement approve/reject join request API                | Mustafa Göçmen        | 4h   | 🔲 Todo |
-| T-19 | Auto-lock reservation when group is full                 | Mustafa Göçmen        | 3h   | 🔲 Todo |
-| T-20 | Send notifications to all members on group full/approved | Mustafa Göçmen        | 3h   | 🔲 Todo |
-| T-21 | Implement cancel & modify reservation API endpoints      | Tuna Öcal             | 4h   | 🔲 Todo |
-| T-22 | Build reservation management UI (customer side)          | Muhammet Gümüş        | 4h   | 🔲 Todo |
-| T-23 | Integrate e-mail service (SendGrid/SMTP)                 | Tuna Öcal             | 3h   | 🔲 Todo |
-| T-24 | Design e-mail confirmation templates                     | Muhammet Gümüş        | 2h   | 🔲 Todo |
-| T-25 | Build admin panel – reservation list & filters           | Muhammet Gümüş        | 6h   | 🔲 Todo |
-| T-26 | Implement admin approve/cancel operations                | Eylül Sena Altunsaray | 3h   | 🔲 Todo |
-| T-27 | Implement working hours & slot management API            | Begüm Rana Türkoğlu   | 4h   | 🔲 Todo |
-| T-28 | Build admin calendar configuration UI                    | Muhammet Gümüş        | 4h   | 🔲 Todo |
+| Task | Description                                                                                                        | Assignee              | Est. | Status          |
+| ---- | ------------------------------------------------------------------------------------------------------------------ | --------------------- | ---- | --------------- |
+| T-17 | Build group leader dashboard (pending requests list)                                                               | Muhammet Gümüş        | 5h   | 🔲 Todo         |
+| T-18 | Implement approve/reject join request API                                                                          | Mustafa Göçmen        | 4h   | 🔲 Todo         |
+| T-19 | Auto-lock reservation when group is full                                                                           | Mustafa Göçmen        | 3h   | 🔲 Todo         |
+| T-20 | Send notifications to all members on group full/approved                                                           | Mustafa Göçmen        | 3h   | 🔲 Todo         |
+| T-21 | Implement cancel & modify reservation API endpoints                                                                | Tuna Öcal             | 4h   | 🔲 Todo         |
+| T-22 | Build reservation management UI (customer side)                                                                    | Muhammet Gümüş        | 4h   | 🔲 Todo         |
+| T-23 | Integrate e-mail service (SendGrid/SMTP)                                                                           | Tuna Öcal             | 3h   | 🔲 Todo         |
+| T-24 | Design e-mail confirmation templates                                                                               | Muhammet Gümüş        | 2h   | 🔲 Todo         |
+| T-25 | Build admin panel – reservation list & filters                                                                     | Muhammet Gümüş        | 6h   | 🔲 Todo         |
+| T-26 | Implement admin approve/cancel operations                                                                          | Eylül Sena Altunsaray | 3h   | 🔲 Todo         |
+| T-27 | Implement working hours & slot management API                                                                      | Begüm Rana Türkoğlu   | 4h   | 🔲 Todo         |
+| T-28 | Build admin calendar configuration UI                                                                              | Muhammet Gümüş        | 4h   | 🔲 Todo         |
+| T-39 | Implement notifications API (`notifications` table, GET / PATCH read / PATCH read-all endpoints)                  | Mustafa Göçmen        | 3h   | 🔄 In Progress  |
+| T-40 | Build NotificationBell component: bell icon, unread badge, dropdown, 5 bildirim tipi, 30s polling, tümünü okundu | Muhammet Gümüş        | 4h   | 🔄 In Progress  |
 
 ### Sprint 3 — Weeks 5–6
 
@@ -363,4 +400,3 @@ A user story is **Done** when:
 ---
 
 _COMP 202 Spring 2026 · LaserZone Reservation System_
-
