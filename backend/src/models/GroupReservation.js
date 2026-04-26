@@ -206,6 +206,68 @@ const GroupReservation = {
     );
     return rows;
   },
+
+  // Approve a join request and increment group's current_count
+  async approveJoinRequest(requestId, groupId) {
+    const [rows] = await pool.execute(
+      `SELECT jr.id, jr.user_id AS userId, jr.player_count AS playerCount, jr.status,
+              gr.party_size AS partySize, gr.current_count AS currentCount,
+              gr.status AS groupStatus
+       FROM join_requests jr
+       JOIN group_reservations gr ON gr.id = jr.group_reservation_id
+       WHERE jr.id = ? AND jr.group_reservation_id = ?`,
+      [requestId, groupId]
+    );
+    const req = rows[0];
+    if (!req) return null;
+    if (req.status !== 'pending') return { error: 'Request is not pending.' };
+    if (req.groupStatus !== 'open') return { error: 'Group is no longer open.' };
+    const newCount = req.currentCount + req.playerCount;
+    if (newCount > req.partySize) return { error: 'Not enough spots for this request.' };
+
+    await pool.execute(`UPDATE join_requests SET status = 'approved' WHERE id = ?`, [requestId]);
+    const newStatus = await GroupReservation.updateCount(groupId, newCount, req.partySize);
+    return { success: true, requestUserId: req.userId, groupFull: newStatus === 'closed' };
+  },
+
+  // Reject a join request
+  async rejectJoinRequest(requestId, groupId) {
+    const [rows] = await pool.execute(
+      `SELECT id, user_id AS userId, status FROM join_requests WHERE id = ? AND group_reservation_id = ?`,
+      [requestId, groupId]
+    );
+    if (!rows[0]) return null;
+    if (rows[0].status !== 'pending') return { error: 'Request is not pending.' };
+    await pool.execute(`UPDATE join_requests SET status = 'rejected' WHERE id = ?`, [requestId]);
+    return { success: true, requestUserId: rows[0].userId };
+  },
+
+  // Get user IDs of all pending/approved members (for group-cancelled notifications)
+  async findActiveMembers(groupId) {
+    const [rows] = await pool.execute(
+      `SELECT DISTINCT user_id AS userId FROM join_requests
+       WHERE group_reservation_id = ? AND status IN ('pending', 'approved')`,
+      [groupId]
+    );
+    return rows.map(r => r.userId);
+  },
+
+  // Get all join requests made by a specific user (with group info)
+  async findRequestsByUser(userId) {
+    const [rows] = await pool.execute(
+      `SELECT jr.id, jr.group_reservation_id AS groupId, jr.player_count AS playerCount,
+              jr.status, jr.created_at,
+              gr.reservation_name AS groupName,
+              DATE_FORMAT(gr.reservation_date, '%Y-%m-%d') AS date,
+              TIME_FORMAT(gr.start_time, '%H:%i') AS startTime
+       FROM join_requests jr
+       JOIN group_reservations gr ON gr.id = jr.group_reservation_id
+       WHERE jr.user_id = ?
+       ORDER BY jr.created_at DESC`,
+      [userId]
+    );
+    return rows;
+  },
 };
 
 module.exports = GroupReservation;

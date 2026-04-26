@@ -2,6 +2,7 @@
 // Open-group creation API
 
 const GroupReservation = require('../models/GroupReservation');
+const Notification = require('../models/Notification');
 
 const OPEN_HOUR  = 10;
 const CLOSE_HOUR = 22;
@@ -139,8 +140,24 @@ const cancel = async (req, res) => {
     const id = parseInt(req.params.id);
     if (isNaN(id)) return res.status(400).json({ message: 'Invalid group ID.' });
 
+    const group = await GroupReservation.findById(id);
+    if (!group) return res.status(404).json({ message: 'Group not found or you are not the leader.' });
+
+    const memberIds = await GroupReservation.findActiveMembers(id);
+
     const cancelled = await GroupReservation.cancel(id, req.user.id);
     if (!cancelled) return res.status(404).json({ message: 'Group not found or you are not the leader.' });
+
+    // Notify active members that the group was cancelled
+    for (const userId of memberIds) {
+      Notification.create({
+        userId,
+        type: 'group_cancelled',
+        title: `Group "${group.name}" was cancelled`,
+        body: `The group you joined on ${group.date} at ${group.startTime} has been cancelled by the leader.`,
+        refGroupId: id,
+      }).catch(() => {});
+    }
 
     return res.status(200).json({ message: 'Group reservation cancelled.' });
   } catch (err) {
@@ -197,6 +214,15 @@ const submitJoinRequest = async (req, res) => {
       playerCount: parsedPlayerCount,
     });
 
+    // Notify the group leader
+    Notification.create({
+      userId: group.leaderUserId,
+      type: 'join_request',
+      title: `New join request for "${group.name}"`,
+      body: `@${req.user.username} wants to join with ${parsedPlayerCount} player${parsedPlayerCount !== 1 ? 's' : ''}.`,
+      refGroupId: groupId,
+    }).catch(() => {});
+
     return res.status(201).json({
       message: 'Join request submitted successfully.',
       joinRequest,
@@ -229,4 +255,67 @@ const listJoinRequests = async (req, res) => {
   }
 };
 
-module.exports = { create, listOpen, listMine, getOne, cancel, submitJoinRequest, listJoinRequests };
+// PUT /api/groups/:id/requests/:requestId
+const respondToRequest = async (req, res) => {
+  try {
+    const groupId = parseInt(req.params.id);
+    const requestId = parseInt(req.params.requestId);
+    const { action } = req.body;
+
+    if (isNaN(groupId) || isNaN(requestId)) return res.status(400).json({ message: 'Invalid IDs.' });
+    if (!['approve', 'reject'].includes(action)) return res.status(400).json({ message: 'Action must be "approve" or "reject".' });
+
+    const group = await GroupReservation.findById(groupId);
+    if (!group) return res.status(404).json({ message: 'Group not found.' });
+    if (group.leaderUserId !== req.user.id) return res.status(403).json({ message: 'Only the group leader can respond to requests.' });
+
+    const result = action === 'approve'
+      ? await GroupReservation.approveJoinRequest(requestId, groupId)
+      : await GroupReservation.rejectJoinRequest(requestId, groupId);
+
+    if (!result) return res.status(404).json({ message: 'Join request not found.' });
+    if (result.error) return res.status(400).json({ message: result.error });
+
+    // Notify the requester
+    const notifType = action === 'approve' ? 'request_approved' : 'request_rejected';
+    const notifTitle = action === 'approve'
+      ? `Your request to join "${group.name}" was approved!`
+      : `Your request to join "${group.name}" was rejected.`;
+    Notification.create({
+      userId: result.requestUserId,
+      type: notifType,
+      title: notifTitle,
+      body: `${group.date} at ${group.startTime}`,
+      refGroupId: group.id,
+    }).catch(() => {});
+
+    // Notify the leader when their group becomes full
+    if (action === 'approve' && result.groupFull) {
+      Notification.create({
+        userId: group.leaderUserId,
+        type: 'group_full',
+        title: `"${group.name}" is now full!`,
+        body: `All ${group.partySize} spots have been filled.`,
+        refGroupId: group.id,
+      }).catch(() => {});
+    }
+
+    return res.status(200).json({ message: `Request ${action}d successfully.` });
+  } catch (err) {
+    console.error('[respondToRequest]', err.message);
+    return res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
+// GET /api/groups/my-requests
+const listMyRequests = async (req, res) => {
+  try {
+    const requests = await GroupReservation.findRequestsByUser(req.user.id);
+    return res.status(200).json({ requests });
+  } catch (err) {
+    console.error('[listMyRequests]', err.message);
+    return res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
+module.exports = { create, listOpen, listMine, getOne, cancel, submitJoinRequest, listJoinRequests, respondToRequest, listMyRequests };

@@ -4,6 +4,7 @@ import Login from './components/Login'
 import Register from './components/Register'
 import Dashboard from './components/Dashboard'
 import BrowseGroups from './components/BrowseGroups'
+import MyGroups from './components/MyGroups'
 import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
@@ -27,6 +28,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <BrowseGroups />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-groups"
+            element={
+              <ProtectedRoute>
+                <MyGroups />
               </ProtectedRoute>
             }
           />
