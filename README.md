@@ -324,6 +324,7 @@ _Group leader approval flow, cancel/modify, e-mail notifications, admin panel_
 | T-26 | Implement admin approve/cancel operations                | Eylül Sena Altunsaray | 3h   | 🔲 Todo |
 | T-27 | Implement working hours & slot management API            | Begüm Rana Türkoğlu   | 4h   | 🔲 Todo |
 | T-28 | Build admin calendar configuration UI                    | Muhammet Gümüş        | 4h   | 🔲 Todo |
+| T-37 | Add Open/Closed toggle & live capacity preview to MakeReservationModal | Muhammet Gümüş | 3h | ✅ Done |
 
 ### Sprint 3 — Weeks 5–6
 
