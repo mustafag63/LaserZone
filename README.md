@@ -71,12 +71,13 @@ laserzone/
 │   └── src/
 │       ├── components/
 │       │   ├── BookingDemo.jsx          # Booking demo/preview
-│       │   ├── BrowseGroups.jsx         # Open groups browse page (Turkish date/time, progress bar, join flow, filters)
+│       │   ├── BrowseGroups.jsx         # Open groups browse page (full date, capacity bar, join flow, filters)
 │       │   ├── CalendarSlotPicker.jsx   # Calendar & time slot picker
-│       │   ├── Dashboard.jsx            # User dashboard
-│       │   ├── DashboardLayout.jsx      # Dashboard layout wrapper
+│       │   ├── Dashboard.jsx            # User dashboard (my reservations)
+│       │   ├── DashboardLayout.jsx      # Layout wrapper with topbar & notification bell
 │       │   ├── Login.jsx                # Login page
 │       │   ├── MakeReservationModal.jsx # New reservation modal (Open/Closed toggle + live capacity preview)
+│       │   ├── MyGroups.jsx             # Leader dashboard: manage groups, approve/reject join requests
 │       │   ├── NotificationBell.jsx     # Bell icon, unread badge, dropdown, 5 notification types, 30s polling
 │       │   ├── ProfileModal.jsx         # User profile modal
 │       │   ├── ProtectedRoute.jsx       # Auth route guard
@@ -191,13 +192,27 @@ npm test
 }
 ```
 
+### Groups (`/api/groups`)
+
+| Method | Endpoint                    | Auth       | Description                                    |
+| ------ | --------------------------- | ---------- | ---------------------------------------------- |
+| POST   | `/`                         | Bearer JWT | Create an open group reservation               |
+| GET    | `/`                         | Bearer JWT | List open groups (filters: date, search, available) |
+| GET    | `/my`                       | Bearer JWT | List groups led by the current user            |
+| GET    | `/my-requests`              | Bearer JWT | List current user's own join requests          |
+| GET    | `/:id`                      | Bearer JWT | Get single group details                       |
+| DELETE | `/:id`                      | Bearer JWT | Cancel a group (leader only)                   |
+| POST   | `/:id/join`                 | Bearer JWT | Submit a join request                          |
+| GET    | `/:id/requests`             | Bearer JWT | List join requests for a group (leader only)   |
+| PUT    | `/:id/requests/:requestId`  | Bearer JWT | Approve or reject a join request (leader only) |
+
 ### Notifications (`/api/notifications`)
 
-| Method | Endpoint         | Auth       | Description                          |
-| ------ | ---------------- | ---------- | ------------------------------------ |
-| GET    | `/`              | Bearer JWT | Get all notifications for the user   |
-| PATCH  | `/:id/read`      | Bearer JWT | Mark a single notification as read   |
-| PATCH  | `/read-all`      | Bearer JWT | Mark all notifications as read       |
+| Method | Endpoint      | Auth       | Description                        |
+| ------ | ------------- | ---------- | ---------------------------------- |
+| GET    | `/`           | Bearer JWT | Get notifications (last 30)        |
+| PUT    | `/read-all`   | Bearer JWT | Mark all notifications as read     |
+| PUT    | `/:id/read`   | Bearer JWT | Mark a single notification as read |
 
 ---
 
@@ -286,16 +301,20 @@ CREATE TABLE join_requests (
 ### `notifications`
 
 ```sql
-CREATE TABLE notifications (
-  id         INT AUTO_INCREMENT PRIMARY KEY,
-  user_id    INT NOT NULL,
-  type       ENUM('join_request','request_approved','request_rejected','group_full','group_cancelled') NOT NULL,
-  message    TEXT NOT NULL,
-  is_read    BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+CREATE TABLE IF NOT EXISTS notifications (
+  id            INT AUTO_INCREMENT PRIMARY KEY,
+  user_id       INT NOT NULL,
+  type          ENUM('join_request','request_approved','request_rejected','group_full','group_cancelled') NOT NULL,
+  title         VARCHAR(200) NOT NULL,
+  body          VARCHAR(500),
+  is_read       BOOLEAN NOT NULL DEFAULT FALSE,
+  ref_group_id  INT,
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 ```
+
+> The `notifications` table is created automatically on server startup — no manual migration needed.
 
 ---
 
@@ -338,8 +357,8 @@ _Auth, slot availability, standard reservation, open-group creation & join reque
 | T-14 | Implement open groups listing API with filters                                                                      | Tuna Öcal                               | 3h   | ✅ Done         |
 | T-15 | Build open groups browse page & join request form                                                                   | Muhammet Gümüş                          | 5h   | ✅ Done         |
 | T-16 | Implement join request submission API                                                                               | Tuna Öcal                               | 3h   | ✅ Done         |
-| T-37 | Enhance group creation UI: Open/Closed toggle + live capacity preview ("8 kişiyle açıyorsan +2 gerekiyor" mesajı)  | Muhammet Gümüş                          | 3h   | 🔄 In Progress  |
-| T-38 | Enhance browse page: Türkçe gün adlı tarih/saat, progress bar'lı kapasite, "Katılmak İstiyorum" akışı, filtreleme | Muhammet Gümüş                          | 5h   | 🔄 In Progress  |
+| T-37 | Enhance group creation UI: Open/Closed toggle + live capacity preview                                              | Muhammet Gümüş                          | 3h   | 🔄 In Progress  |
+| T-38 | Enhance browse page: full date/time, capacity progress bar, "I Want to Join" flow, filtering                      | Muhammet Gümüş                          | 5h   | ✅ Done         |
 
 ### Sprint 2 — Weeks 3–4
 
@@ -347,10 +366,10 @@ _Group leader approval flow, cancel/modify, e-mail notifications, admin panel_
 
 | Task | Description                                                                                                        | Assignee              | Est. | Status          |
 | ---- | ------------------------------------------------------------------------------------------------------------------ | --------------------- | ---- | --------------- |
-| T-17 | Build group leader dashboard (pending requests list)                                                               | Muhammet Gümüş        | 5h   | 🔲 Todo         |
-| T-18 | Implement approve/reject join request API                                                                          | Mustafa Göçmen        | 4h   | 🔲 Todo         |
-| T-19 | Auto-lock reservation when group is full                                                                           | Mustafa Göçmen        | 3h   | 🔲 Todo         |
-| T-20 | Send notifications to all members on group full/approved                                                           | Mustafa Göçmen        | 3h   | 🔲 Todo         |
+| T-17 | Build group leader dashboard (pending requests list, approve/reject UI)                                            | Muhammet Gümüş        | 5h   | ✅ Done         |
+| T-18 | Implement approve/reject join request API                                                                          | Tuna Öcal             | 4h   | ✅ Done         |
+| T-19 | Auto-lock reservation when group is full                                                                           | Tuna Öcal             | 3h   | ✅ Done         |
+| T-20 | Send notifications to all members on group full/approved/rejected/cancelled                                        | Tuna Öcal             | 3h   | ✅ Done         |
 | T-21 | Implement cancel & modify reservation API endpoints                                                                | Tuna Öcal             | 4h   | 🔲 Todo         |
 | T-22 | Build reservation management UI (customer side)                                                                    | Muhammet Gümüş        | 4h   | 🔲 Todo         |
 | T-23 | Integrate e-mail service (SendGrid/SMTP)                                                                           | Tuna Öcal             | 3h   | 🔲 Todo         |
@@ -359,8 +378,8 @@ _Group leader approval flow, cancel/modify, e-mail notifications, admin panel_
 | T-26 | Implement admin approve/cancel operations                                                                          | Eylül Sena Altunsaray | 3h   | 🔲 Todo         |
 | T-27 | Implement working hours & slot management API                                                                      | Begüm Rana Türkoğlu   | 4h   | 🔲 Todo         |
 | T-28 | Build admin calendar configuration UI                                                                              | Muhammet Gümüş        | 4h   | 🔲 Todo         |
-| T-39 | Implement notifications API (`notifications` table, GET / PATCH read / PATCH read-all endpoints)                  | Mustafa Göçmen        | 3h   | 🔄 In Progress  |
-| T-40 | Build NotificationBell component: bell icon, unread badge, dropdown, 5 bildirim tipi, 30s polling, tümünü okundu | Muhammet Gümüş        | 4h   | 🔄 In Progress  |
+| T-39 | Implement notifications API (table auto-create, GET / PUT read / PUT read-all endpoints)                          | Tuna Öcal             | 3h   | ✅ Done         |
+| T-40 | Build NotificationBell: bell icon, unread badge, dropdown, 5 types, 30s polling, mark all read                   | Muhammet Gümüş        | 4h   | ✅ Done         |
 
 ### Sprint 3 — Weeks 5–6
 
