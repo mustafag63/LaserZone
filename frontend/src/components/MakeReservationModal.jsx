@@ -1,5 +1,8 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import CalendarSlotPicker from './CalendarSlotPicker'
+
+// Maximum number of players the arena can accommodate in one session
+const ARENA_CAPACITY = 20
 
 export default function MakeReservationModal({ onClose, onSave, existingReservations = [] }) {
   const [reservationName, setReservationName] = useState('')
@@ -8,6 +11,11 @@ export default function MakeReservationModal({ onClose, onSave, existingReservat
   const [selectedTime, setSelectedTime] = useState(null)
   const [errors, setErrors] = useState({})
   const [slots, setSlots] = useState([])
+  const [submitting, setSubmitting] = useState(false)
+  const [apiError, setApiError] = useState('')
+
+  // Group visibility: 'open' allows join requests, 'closed' is private
+  const [groupType, setGroupType] = useState('open')
 
   // Fetch real availability from API
   useEffect(() => {
@@ -55,7 +63,20 @@ export default function MakeReservationModal({ onClose, onSave, existingReservat
   }
 
   const decrement = () => setPlayers(p => Math.max(3, p - 1))
-  const increment = () => setPlayers(p => Math.min(20, p + 1))
+  const increment = () => setPlayers(p => Math.min(ARENA_CAPACITY, p + 1))
+
+  // Capacity metrics derived from current player count
+  const capacityInfo = useMemo(() => {
+    const fillRatio = players / ARENA_CAPACITY          // 0.0 – 1.0
+    const remaining = ARENA_CAPACITY - players           // empty slots left
+
+    // Progress bar colour: green → yellow → red as arena fills
+    let barColor = 'bg-green-500'
+    if (fillRatio > 0.75) barColor = 'bg-red-500'
+    else if (fillRatio > 0.5) barColor = 'bg-yellow-400'
+
+    return { fillRatio, remaining, barColor }
+  }, [players])
 
   const validate = () => {
     const newErrors = {}
@@ -70,9 +91,6 @@ export default function MakeReservationModal({ onClose, onSave, existingReservat
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
-
-  const [submitting, setSubmitting] = useState(false)
-  const [apiError, setApiError] = useState('')
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -94,6 +112,7 @@ export default function MakeReservationModal({ onClose, onSave, existingReservat
           date: selectedDate,
           time: selectedTime,
           players,
+          type: groupType, // 'open' | 'closed' — controls join-request visibility
         }),
       })
 
@@ -110,6 +129,7 @@ export default function MakeReservationModal({ onClose, onSave, existingReservat
         date: selectedDate,
         time: selectedTime,
         players,
+        type: groupType,
         createdAt: new Date().toISOString(),
       })
     } catch {
@@ -171,7 +191,7 @@ export default function MakeReservationModal({ onClose, onSave, existingReservat
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Number of Players
-              <span className="text-gray-500 font-normal ml-2">(min 3 – max 20)</span>
+              <span className="text-gray-500 font-normal ml-2">(min 3 – max {ARENA_CAPACITY})</span>
             </label>
             <div className="flex items-center gap-4">
               <button
@@ -186,13 +206,88 @@ export default function MakeReservationModal({ onClose, onSave, existingReservat
               <button
                 type="button"
                 onClick={increment}
-                disabled={players >= 20}
+                disabled={players >= ARENA_CAPACITY}
                 className="w-10 h-10 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-bold text-lg flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition"
               >
                 +
               </button>
               <span className="text-gray-500 text-sm ml-2">players</span>
             </div>
+          </div>
+
+          {/* ── Open / Closed toggle ── */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-3">
+              Group Visibility
+            </label>
+            <div className="flex gap-3">
+              {/* Open button */}
+              <button
+                type="button"
+                onClick={() => setGroupType('open')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border font-semibold text-sm transition-all duration-200 ${
+                  groupType === 'open'
+                    ? 'border-green-500 bg-green-500/10 text-green-400 shadow-[0_0_12px_2px_rgba(34,197,94,0.35)]'
+                    : 'border-gray-600 bg-gray-800 text-gray-400 hover:border-gray-500'
+                }`}
+              >
+                {/* Unlock icon */}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M8 11V7a4 4 0 018 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                </svg>
+                Open
+              </button>
+
+              {/* Closed button */}
+              <button
+                type="button"
+                onClick={() => setGroupType('closed')}
+                className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg border font-semibold text-sm transition-all duration-200 ${
+                  groupType === 'closed'
+                    ? 'border-red-500 bg-red-500/10 text-red-400 shadow-[0_0_12px_2px_rgba(239,68,68,0.3)]'
+                    : 'border-gray-600 bg-gray-800 text-gray-400 hover:border-gray-500'
+                }`}
+              >
+                {/* Lock icon */}
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zM16 7a4 4 0 10-8 0v4h8V7z" />
+                </svg>
+                Closed
+              </button>
+            </div>
+          </div>
+
+          {/* ── Capacity preview panel ── */}
+          <div className="rounded-lg border border-gray-700 bg-gray-800/60 p-4 space-y-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-400 font-medium">Arena Capacity</span>
+              <span className="text-white font-bold">
+                {players} / {ARENA_CAPACITY}
+              </span>
+            </div>
+
+            {/* Progress bar with smooth colour transition */}
+            <div className="w-full h-2.5 bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${capacityInfo.barColor}`}
+                style={{ width: `${capacityInfo.fillRatio * 100}%` }}
+              />
+            </div>
+
+            {/* Context-sensitive helper message */}
+            {groupType === 'open' ? (
+              <p className="text-xs text-green-400">
+                {capacityInfo.remaining > 0
+                  ? `${players} kişiyle açıyorsan +${capacityInfo.remaining} daha katılabilir`
+                  : 'Arena tamamen dolu — katılım için yer yok'}
+              </p>
+            ) : (
+              <p className="text-xs text-red-400">
+                Özel rezervasyon — dış katılım kapalı
+              </p>
+            )}
           </div>
 
           {/* Calendar Slot Picker */}
