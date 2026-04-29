@@ -187,6 +187,17 @@ const GroupReservation = {
     const endHour = String(parseInt(startTime.split(':')[0]) + 1).padStart(2, '0');
     const endTime = `${endHour}:00:00`;
 
+    // One group per slot — make sure no other group owns the target slot
+    const [conflicting] = await pool.execute(
+      `SELECT id FROM group_reservations
+       WHERE reservation_date = ? AND start_time = ? AND status IN ('open', 'closed') AND id != ?
+       LIMIT 1`,
+      [date, startTimeFull, id]
+    );
+    if (conflicting.length > 0) {
+      return { error: 'group_exists' };
+    }
+
     // Conflict check — exclude this group, use partySize as the footprint
     const booked = await slotBooked(date, startTimeFull, { excludeGroupId: id });
     if (booked + partySize > MAX_CAPACITY) {

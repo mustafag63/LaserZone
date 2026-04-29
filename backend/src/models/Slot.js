@@ -65,12 +65,28 @@ const Slot = {
   },
 
   /**
+   * Get start_times that already have an active group reservation.
+   * A slot with a group is fully taken — no other group or reservation allowed.
+   */
+  async getGroupTakenSlots(date) {
+    const [rows] = await pool.execute(
+      `SELECT start_time FROM group_reservations
+       WHERE reservation_date = ? AND status IN ('open', 'closed')`,
+      [date]
+    );
+    const taken = new Set();
+    for (const row of rows) taken.add(row.start_time);
+    return taken;
+  },
+
+  /**
    * Get availability for a single date.
-   * Returns array of slots with capacity info.
+   * A slot is unavailable if it already has a group OR capacity is exhausted.
    */
   async getAvailability(date) {
     const slots = this.generateSlots(date);
     const bookedRows = await this.getBookedCounts(date);
+    const groupTaken = await this.getGroupTakenSlots(date);
 
     const bookedMap = {};
     for (const row of bookedRows) {
@@ -81,15 +97,16 @@ const Slot = {
     return slots.map(slot => {
       const key = `${slot.start_time}-${slot.end_time}`;
       const booked = bookedMap[key] || 0;
-      const available = MAX_CAPACITY - booked;
+      const hasGroup = groupTaken.has(slot.start_time);
+      const available = hasGroup ? 0 : MAX_CAPACITY - booked;
       return {
         date: slot.date,
         start_time: slot.start_time,
         end_time: slot.end_time,
         max_capacity: MAX_CAPACITY,
-        booked,
+        booked: hasGroup ? MAX_CAPACITY : booked,
         available,
-        is_available: available > 0,
+        is_available: !hasGroup && available > 0,
       };
     });
   },

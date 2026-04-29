@@ -25,6 +25,16 @@ async function slotBooked(pool, date, startTimeFull, { excludeReservationId = nu
   return Number(r[0].booked) + Number(g[0].booked);
 }
 
+async function groupExistsInSlot(date, startTimeFull) {
+  const [rows] = await pool.execute(
+    `SELECT id FROM group_reservations
+     WHERE reservation_date = ? AND start_time = ? AND status IN ('open', 'closed')
+     LIMIT 1`,
+    [date, startTimeFull]
+  );
+  return rows.length > 0;
+}
+
 const Reservation = {
   // POST /api/reservations — create with conflict check
   async create({ userId, name, date, startTime, playerCount }) {
@@ -32,6 +42,11 @@ const Reservation = {
     const startTimeFull = startTime.length === 5 ? `${startTime}:00` : startTime;
     const endHour = String(parseInt(startTime.split(':')[0]) + 1).padStart(2, '0');
     const endTime = `${endHour}:00:00`;
+
+    // Block slot if a group already owns it
+    if (await groupExistsInSlot(date, startTimeFull)) {
+      return null; // slot taken by a group
+    }
 
     // Conflict check — sum active players across reservations + groups
     const booked = await slotBooked(pool, date, startTimeFull);
@@ -103,6 +118,11 @@ const Reservation = {
     const startTimeFull = startTime.length === 5 ? `${startTime}:00` : startTime;
     const endHour = String(parseInt(startTime.split(':')[0]) + 1).padStart(2, '0');
     const endTime = `${endHour}:00:00`;
+
+    // Block slot if a group already owns it
+    if (await groupExistsInSlot(date, startTimeFull)) {
+      return null; // slot taken by a group
+    }
 
     // Conflict check — exclude the current reservation, check both tables
     const booked = await slotBooked(pool, date, startTimeFull, { excludeReservationId: id });

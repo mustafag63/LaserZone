@@ -357,8 +357,10 @@ _Auth, slot availability, standard reservation, open-group creation & join reque
 | T-14 | Implement open groups listing API with filters                                                                      | Tuna Öcal                               | 3h   | ✅ Done         |
 | T-15 | Build open groups browse page & join request form                                                                   | Muhammet Gümüş                          | 5h   | ✅ Done         |
 | T-16 | Implement join request submission API                                                                               | Tuna Öcal                               | 3h   | ✅ Done         |
-| T-37 | Enhance group creation UI: Open/Closed toggle + live capacity preview                                              | Muhammet Gümüş                          | 3h   | ✅ Done  |
+| T-37 | Enhance group creation UI: Open/Closed toggle + live capacity preview                                              | Muhammet Gümüş                          | 3h   | ✅ Done         |
 | T-38 | Enhance browse page: full date/time, capacity progress bar, "I Want to Join" flow, filtering                      | Muhammet Gümüş                          | 5h   | ✅ Done         |
+| T-41 | Enforce one-group-per-slot rule: block duplicate groups & individual reservations when slot is taken (API + model) | Mustafa Göçmen                          | 3h   | ✅ Done         |
+| T-42 | Live slot availability in reservation modal: fetch real API on date select, disable taken slots in dropdown       | Mustafa Göçmen                          | 2h   | ✅ Done         |
 
 ### Sprint 2 — Weeks 3–4
 

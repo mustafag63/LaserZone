@@ -1,19 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { apiCall } from '../utils/api'
 
-const OPEN_HOUR = 10
-const CLOSE_HOUR = 22
 const MAX_CAPACITY = 20
-
-function generateTimeSlots() {
-  const slots = []
-  for (let h = OPEN_HOUR; h < CLOSE_HOUR; h++) {
-    slots.push(`${String(h).padStart(2, '0')}:00`)
-  }
-  return slots
-}
-
-const TIME_SLOTS = generateTimeSlots()
 
 export default function MakeReservationModal({ onClose, onSave }) {
   const today = new Date().toISOString().split('T')[0]
@@ -22,11 +10,30 @@ export default function MakeReservationModal({ onClose, onSave }) {
 
   const [name, setName] = useState('')
   const [date, setDate] = useState('')
-  const [time, setTime] = useState('10:00')
+  const [time, setTime] = useState('')
   const [myPlayers, setMyPlayers] = useState(3)
   const [external, setExternal] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [apiError, setApiError] = useState('')
+  const [slots, setSlots] = useState([])
+  const [loadingSlots, setLoadingSlots] = useState(false)
+
+  useEffect(() => {
+    if (!date) { setSlots([]); setTime(''); return }
+    setLoadingSlots(true)
+    apiCall(`/api/slots/availability?date=${date}`)
+      .then(data => {
+        const available = (data.slots || data).map(s => ({
+          time: s.start_time.slice(0, 5),
+          available: s.is_available,
+        }))
+        setSlots(available)
+        const first = available.find(s => s.available)
+        setTime(first ? first.time : '')
+      })
+      .catch(() => setSlots([]))
+      .finally(() => setLoadingSlots(false))
+  }, [date])
 
   const total = myPlayers + external
 
@@ -157,15 +164,25 @@ export default function MakeReservationModal({ onClose, onSave }) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">Time</label>
-              <select
-                value={time}
-                onChange={e => setTime(e.target.value)}
-                className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
-              >
-                {TIME_SLOTS.map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+              {loadingSlots ? (
+                <div className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-gray-500 text-sm">
+                  Yükleniyor…
+                </div>
+              ) : (
+                <select
+                  value={time}
+                  onChange={e => setTime(e.target.value)}
+                  disabled={!date || slots.length === 0}
+                  className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition disabled:opacity-50"
+                >
+                  {!date && <option value="">Önce tarih seç</option>}
+                  {slots.map(s => (
+                    <option key={s.time} value={s.time} disabled={!s.available}>
+                      {s.time}{!s.available ? ' — Dolu' : ''}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
 

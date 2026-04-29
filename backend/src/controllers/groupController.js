@@ -56,6 +56,12 @@ const create = async (req, res) => {
       leaderPlayerCount: parsedLeaderPlayerCount,
     });
 
+    if (group && group.error === 'group_exists') {
+      return res.status(409).json({ message: 'Another group has already reserved this time slot. Please choose a different time.' });
+    }
+    if (group && group.error === 'slot_full') {
+      return res.status(409).json({ message: 'This time slot is fully booked. Please choose a different time.' });
+    }
     if (!group) {
       return res.status(409).json({ message: 'This time slot is fully booked. Please choose a different time.' });
     }
@@ -189,6 +195,7 @@ const update = async (req, res) => {
       currentCount: group.currentCount,
     });
 
+    if (updated && updated.error === 'group_exists') return res.status(409).json({ message: 'Another group has already reserved this time slot. Please choose a different time.' });
     if (updated === null) return res.status(409).json({ message: 'This time slot is fully booked. Please choose a different time.' });
     if (!updated) return res.status(404).json({ message: 'Group not found or update failed.' });
     return res.status(200).json({ message: 'Group updated successfully.' });
