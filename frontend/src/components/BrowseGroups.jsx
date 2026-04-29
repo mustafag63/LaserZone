@@ -202,22 +202,29 @@ export default function BrowseGroups() {
               const isOwn = g.leaderUsername === user?.username
               const myReq = myRequests[g.id]
 
+              const isFull = g.status === 'closed' || spotsLeft === 0
+
               return (
                 <div
                   key={g.id}
-                  className="bg-gray-800 border border-gray-700 rounded-xl px-6 py-5 hover:border-purple-600 transition"
+                  className={`bg-gray-800 border rounded-xl px-6 py-5 transition ${isFull ? 'border-gray-700 opacity-75' : 'border-gray-700 hover:border-purple-600'}`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="w-2.5 h-2.5 rounded-full bg-green-400 flex-shrink-0" />
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isFull ? 'bg-red-500' : 'bg-green-400'}`} />
                         <p className="text-white font-semibold truncate">{g.name}</p>
+                        {isFull && (
+                          <span className="px-2 py-0.5 bg-red-900/50 border border-red-700 rounded-full text-xs font-semibold text-red-400">
+                            Full
+                          </span>
+                        )}
                       </div>
                       <p className="text-gray-400 text-sm">
                         {formatDate(g.date)} · {format12Hour(g.startTime)} – {format12Hour(g.endTime)}
                       </p>
                       <p className="text-gray-500 text-xs mt-0.5">
-                        Leader: {g.leaderUsername} · {spotsLeft} spot{spotsLeft !== 1 ? 's' : ''} left
+                        Leader: {g.leaderUsername} · {isFull ? 'No spots left' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
                       </p>
                       <CapacityBar current={g.currentCount} total={g.partySize} className="mt-3" />
                     </div>
@@ -231,8 +238,8 @@ export default function BrowseGroups() {
                         <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${requestBadge(myReq.status)}`}>
                           {requestLabel(myReq.status)}
                         </span>
-                      ) : spotsLeft === 0 ? (
-                        <span className="px-3 py-1.5 bg-gray-700 rounded-lg text-xs font-medium text-gray-500">
+                      ) : isFull ? (
+                        <span className="px-3 py-1.5 bg-red-900/30 border border-red-800 rounded-lg text-xs font-semibold text-red-500">
                           Full
                         </span>
                       ) : (

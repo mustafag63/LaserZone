@@ -5,6 +5,26 @@ const pool = require('../config/db');
 
 const MAX_CAPACITY = 20;
 
+// Returns total players booked in a slot across both tables.
+// excludeReservationId and excludeGroupId allow excluding the record being updated.
+async function slotBooked(pool, date, startTimeFull, { excludeReservationId = null, excludeGroupId = null } = {}) {
+  const [r] = await pool.execute(
+    `SELECT COALESCE(SUM(player_count), 0) AS booked
+     FROM reservations
+     WHERE reservation_date = ? AND start_time = ? AND status = 'active'
+       ${excludeReservationId ? 'AND id != ?' : ''}`,
+    excludeReservationId ? [date, startTimeFull, excludeReservationId] : [date, startTimeFull]
+  );
+  const [g] = await pool.execute(
+    `SELECT COALESCE(SUM(current_count), 0) AS booked
+     FROM group_reservations
+     WHERE reservation_date = ? AND start_time = ? AND status IN ('open', 'closed')
+       ${excludeGroupId ? 'AND id != ?' : ''}`,
+    excludeGroupId ? [date, startTimeFull, excludeGroupId] : [date, startTimeFull]
+  );
+  return Number(r[0].booked) + Number(g[0].booked);
+}
+
 const Reservation = {
   // POST /api/reservations — create with conflict check
   async create({ userId, name, date, startTime, playerCount }) {
@@ -13,15 +33,8 @@ const Reservation = {
     const endHour = String(parseInt(startTime.split(':')[0]) + 1).padStart(2, '0');
     const endTime = `${endHour}:00:00`;
 
-    // Conflict check — sum active players for this slot
-    const [rows] = await pool.execute(
-      `SELECT COALESCE(SUM(player_count), 0) AS booked
-       FROM reservations
-       WHERE reservation_date = ? AND start_time = ? AND status = 'active'`,
-      [date, startTimeFull]
-    );
-
-    const booked = Number(rows[0].booked);
+    // Conflict check — sum active players across reservations + groups
+    const booked = await slotBooked(pool, date, startTimeFull);
     if (booked + playerCount > MAX_CAPACITY) {
       return null; // slot full
     }
@@ -83,6 +96,29 @@ const Reservation = {
       [id, userId]
     );
     return result.affectedRows > 0;
+  },
+
+  // PUT /api/reservations/:id — update date/time/players with conflict check
+  async update(id, userId, { date, startTime, playerCount }) {
+    const startTimeFull = startTime.length === 5 ? `${startTime}:00` : startTime;
+    const endHour = String(parseInt(startTime.split(':')[0]) + 1).padStart(2, '0');
+    const endTime = `${endHour}:00:00`;
+
+    // Conflict check — exclude the current reservation, check both tables
+    const booked = await slotBooked(pool, date, startTimeFull, { excludeReservationId: id });
+    if (booked + playerCount > MAX_CAPACITY) {
+      return null; // slot full
+    }
+
+    const [result] = await pool.execute(
+      `UPDATE reservations
+       SET reservation_date = ?, start_time = ?, end_time = ?, player_count = ?
+       WHERE id = ? AND user_id = ? AND status = 'active'`,
+      [date, startTimeFull, endTime, playerCount, id, userId]
+    );
+
+    if (result.affectedRows === 0) return false;
+    return { id, date, startTime: startTimeFull, endTime, playerCount };
   },
 };
 

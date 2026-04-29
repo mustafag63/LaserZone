@@ -32,8 +32,14 @@ function CapacityBar({ current, total, className = '' }) {
 
 const STATUS_STYLE = {
   open:      'text-green-400 bg-green-900/30 border-green-700',
-  closed:    'text-gray-400 bg-gray-700/50 border-gray-600',
-  cancelled: 'text-red-400 bg-red-900/30 border-red-700',
+  closed:    'text-red-400 bg-red-900/30 border-red-700',
+  cancelled: 'text-gray-400 bg-gray-700/50 border-gray-600',
+}
+
+const STATUS_LABEL = {
+  open:      'Open',
+  closed:    'Full',
+  cancelled: 'Cancelled',
 }
 
 export default function MyGroups() {
@@ -123,7 +129,7 @@ export default function MyGroups() {
               </svg>
             </div>
             <p className="text-gray-400 font-medium">You haven't created any groups</p>
-            <p className="text-gray-600 text-sm mt-1">Create a group from the Browse Groups page.</p>
+            <p className="text-gray-600 text-sm mt-1">Go to My Reservations and toggle "Mark as Open Group" to create one.</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -143,7 +149,7 @@ export default function MyGroups() {
                         <div className="flex items-center gap-3 mb-1 flex-wrap">
                           <p className="text-white font-semibold">{g.name}</p>
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_STYLE[g.status] || STATUS_STYLE.open}`}>
-                            {g.status}
+                            {STATUS_LABEL[g.status] || g.status}
                           </span>
                         </div>
                         <p className="text-gray-400 text-sm">

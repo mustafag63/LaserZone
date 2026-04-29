@@ -3,6 +3,26 @@
 
 const pool = require('../config/db');
 
+const MAX_CAPACITY = 20;
+
+async function slotBooked(date, startTimeFull, { excludeReservationId = null, excludeGroupId = null } = {}) {
+  const [r] = await pool.execute(
+    `SELECT COALESCE(SUM(player_count), 0) AS booked
+     FROM reservations
+     WHERE reservation_date = ? AND start_time = ? AND status = 'active'
+       ${excludeReservationId ? 'AND id != ?' : ''}`,
+    excludeReservationId ? [date, startTimeFull, excludeReservationId] : [date, startTimeFull]
+  );
+  const [g] = await pool.execute(
+    `SELECT COALESCE(SUM(current_count), 0) AS booked
+     FROM group_reservations
+     WHERE reservation_date = ? AND start_time = ? AND status IN ('open', 'closed')
+       ${excludeGroupId ? 'AND id != ?' : ''}`,
+    excludeGroupId ? [date, startTimeFull, excludeGroupId] : [date, startTimeFull]
+  );
+  return Number(r[0].booked) + Number(g[0].booked);
+}
+
 const GroupReservation = {
   async createTables() {
     await pool.execute(`
@@ -42,6 +62,23 @@ const GroupReservation = {
     const endHour = String(parseInt(startTime.split(':')[0]) + 1).padStart(2, '0');
     const endTime = `${endHour}:00:00`;
 
+    // One group per slot rule
+    const [existing] = await pool.execute(
+      `SELECT id FROM group_reservations
+       WHERE reservation_date = ? AND start_time = ? AND status IN ('open', 'closed')
+       LIMIT 1`,
+      [date, startTimeFull]
+    );
+    if (existing.length > 0) {
+      return { error: 'group_exists' };
+    }
+
+    // Capacity check across both tables
+    const booked = await slotBooked(date, startTimeFull);
+    if (booked + leaderPlayerCount > MAX_CAPACITY) {
+      return { error: 'slot_full' };
+    }
+
     const [result] = await pool.execute(
       `INSERT INTO group_reservations
          (leader_user_id, reservation_name, reservation_date, start_time, end_time, party_size, current_count)
@@ -64,7 +101,7 @@ const GroupReservation = {
 
   // List all open groups (for browsing) with optional filters
   async findOpen(filters = {}) {
-    const conditions = ["g.status = 'open'"];
+    const conditions = ["g.status IN ('open', 'closed')"];
     const params = [];
 
     if (filters.date) {
@@ -142,6 +179,27 @@ const GroupReservation = {
       [leaderUserId]
     );
     return rows;
+  },
+
+  // Update a group (leader only)
+  async update(id, leaderUserId, { name, date, startTime, partySize, currentCount }) {
+    const startTimeFull = startTime.length === 5 ? `${startTime}:00` : startTime;
+    const endHour = String(parseInt(startTime.split(':')[0]) + 1).padStart(2, '0');
+    const endTime = `${endHour}:00:00`;
+
+    // Conflict check — exclude this group, use partySize as the footprint
+    const booked = await slotBooked(date, startTimeFull, { excludeGroupId: id });
+    if (booked + partySize > MAX_CAPACITY) {
+      return null; // slot full
+    }
+
+    const [result] = await pool.execute(
+      `UPDATE group_reservations
+       SET reservation_name = ?, reservation_date = ?, start_time = ?, end_time = ?, party_size = ?
+       WHERE id = ? AND leader_user_id = ? AND status != 'cancelled'`,
+      [name, date, startTimeFull, endTime, partySize, id, leaderUserId]
+    );
+    return result.affectedRows > 0;
   },
 
   // Cancel a group (leader only)

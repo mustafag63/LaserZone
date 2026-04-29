@@ -370,8 +370,8 @@ _Group leader approval flow, cancel/modify, e-mail notifications, admin panel_
 | T-18 | Implement approve/reject join request API                                                                          | Tuna Öcal             | 4h   | ✅ Done         |
 | T-19 | Auto-lock reservation when group is full                                                                           | Tuna Öcal             | 3h   | ✅ Done         |
 | T-20 | Send notifications to all members on group full/approved/rejected/cancelled                                        | Tuna Öcal             | 3h   | ✅ Done         |
-| T-21 | Implement cancel & modify reservation API endpoints                                                                | Tuna Öcal             | 4h   | 🔲 Todo         |
-| T-22 | Build reservation management UI (customer side)                                                                    | Muhammet Gümüş        | 4h   | 🔲 Todo         |
+| T-21 | Implement cancel & modify reservation API endpoints                                                                | Tuna Öcal             | 4h   | ✅ Done         |
+| T-22 | Build reservation management UI (customer side)                                                                    | Muhammet Gümüş        | 4h   | ✅ Done         |
 | T-23 | Integrate e-mail service (SendGrid/SMTP)                                                                           | Tuna Öcal             | 3h   | 🔲 Todo         |
 | T-24 | Design e-mail confirmation templates                                                                               | Muhammet Gümüş        | 2h   | 🔲 Todo         |
 | T-25 | Build admin panel – reservation list & filters                                                                     | Muhammet Gümüş        | 6h   | 🔲 Todo         |

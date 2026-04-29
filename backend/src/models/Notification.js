@@ -26,13 +26,14 @@ const Notification = {
   },
 
   async findByUser(userId, limit = 30) {
+    const safeLimit = parseInt(limit) || 30;
     const [rows] = await pool.execute(
       `SELECT id, type, title, body, is_read AS isRead, ref_group_id AS refGroupId, created_at AS createdAt
        FROM notifications
        WHERE user_id = ?
        ORDER BY created_at DESC
-       LIMIT ?`,
-      [userId, limit]
+       LIMIT ${safeLimit}`,
+      [userId]
     );
     return rows;
   },
