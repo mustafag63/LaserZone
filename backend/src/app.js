@@ -8,6 +8,7 @@ const slotRoutes          = require('./routes/slotRoutes');
 const reservationRoutes   = require('./routes/reservationRoutes');
 const groupRoutes         = require('./routes/groupRoutes');
 const notificationRoutes  = require('./routes/notificationRoutes');
+const adminRoutes         = require('./routes/adminRoutes');
 const Notification        = require('./models/Notification');
 const GroupReservation    = require('./models/GroupReservation');
 
@@ -22,6 +23,7 @@ app.use('/api/slots',         slotRoutes);
 app.use('/api/reservations',  reservationRoutes);
 app.use('/api/groups',        groupRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin',         adminRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
