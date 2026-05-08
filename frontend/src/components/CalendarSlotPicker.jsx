@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react'
-import { formatDate, format12HourTime, getDayOfWeek, generateMockSlots } from '../utils/slotHelpers'
+import { formatDate, format12HourTime, getDayOfWeek } from '../utils/slotHelpers'
+import { useSlotPolling } from '../hooks/useSlotPolling'
 
 export default function CalendarSlotPicker({
   onSlotSelect,
   startDate: startDateProp,
   daysAhead = 7,
-  mockSlots = null,
 }) {
   const startDate = useMemo(() => startDateProp || new Date(), [startDateProp])
   const startDateStr = useMemo(() => startDate.toISOString().split('T')[0], [startDate])
@@ -13,8 +13,10 @@ export default function CalendarSlotPicker({
   const [selectedDate, setSelectedDate] = useState(startDateStr)
   const [selectedTime, setSelectedTime] = useState(null)
   const [dates, setDates] = useState([])
-  const [slots, setSlots] = useState([])
-  const [timeSlots, setTimeSlots] = useState([])
+
+  const { slots, loading, error, lastUpdated } = useSlotPolling(selectedDate)
+
+  const timeSlots = slots
 
   // Generate dates for the horizontal scroller
   useEffect(() => {
@@ -27,18 +29,10 @@ export default function CalendarSlotPicker({
     setDates(generatedDates)
   }, [startDateStr, daysAhead])
 
-  // Load mock slots
+  // Reset selected time when date changes
   useEffect(() => {
-    const loadedSlots = mockSlots || generateMockSlots(startDate, daysAhead)
-    setSlots(loadedSlots)
-  }, [mockSlots, startDateStr, daysAhead])
-
-  // Update time slots when selected date changes
-  useEffect(() => {
-    const selectedSlots = slots.filter(slot => slot.date === selectedDate)
-    setTimeSlots(selectedSlots)
-    setSelectedTime(null) // Reset selected time when date changes
-  }, [selectedDate, slots])
+    setSelectedTime(null)
+  }, [selectedDate])
 
   // Notify parent component when slot is selected
   const handleTimeSlotClick = (time, status) => {
@@ -51,14 +45,29 @@ export default function CalendarSlotPicker({
   return (
     <div className="w-full max-w-4xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-lg shadow-lg">
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Select Date & Time
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          Choose your preferred time slot for your reservation
-        </p>
+      <div className="mb-8 flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Select Date & Time
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            Choose your preferred time slot for your reservation
+          </p>
+        </div>
+        <div className="text-right text-xs text-gray-400 dark:text-gray-500 mt-1">
+          {loading && <span className="animate-pulse">Updating...</span>}
+          {!loading && lastUpdated && (
+            <span>Updated {lastUpdated.toLocaleTimeString()}</span>
+          )}
+        </div>
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg text-sm text-red-700 dark:text-red-300">
+          {error} — showing last known data.
+        </div>
+      )}
 
       {/* Date Scroller */}
       <div className="mb-8">
@@ -101,7 +110,11 @@ export default function CalendarSlotPicker({
           Available Times
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-          {timeSlots.length > 0 ? (
+          {loading && timeSlots.length === 0 ? (
+            <div className="col-span-full text-center py-8">
+              <p className="text-gray-400 dark:text-gray-500 animate-pulse">Loading slots...</p>
+            </div>
+          ) : timeSlots.length > 0 ? (
             timeSlots.map(slot => {
               const isSelected = slot.time === selectedTime
               const isBooked = slot.status === 'booked'
@@ -129,6 +142,7 @@ export default function CalendarSlotPicker({
               <p className="text-gray-500 dark:text-gray-400">No time slots available for this date</p>
             </div>
           )}
+
         </div>
       </div>
 
