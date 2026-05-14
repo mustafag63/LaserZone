@@ -376,6 +376,86 @@ const respondToRequest = async (req, res) => {
   }
 };
 
+// POST /api/groups/:id/leave
+const submitLeaveRequest = async (req, res) => {
+  try {
+    const groupId = parseInt(req.params.id);
+    if (isNaN(groupId)) return res.status(400).json({ message: 'Invalid group ID.' });
+
+    const group = await GroupReservation.findById(groupId);
+    if (!group) return res.status(404).json({ message: 'Group not found.' });
+    if (group.status === 'cancelled') return res.status(400).json({ message: 'Group is cancelled.' });
+    if (group.leaderUserId === req.user.id) {
+      return res.status(400).json({ message: 'Group leader cannot submit a leave request. Cancel or edit the group instead.' });
+    }
+
+    const leaveRequest = await GroupReservation.createLeaveRequest({
+      groupReservationId: groupId,
+      userId: req.user.id,
+    });
+
+    if (!leaveRequest) return res.status(404).json({ message: 'You are not an active member of this group.' });
+    if (leaveRequest.error) return res.status(409).json({ message: leaveRequest.error });
+
+    return res.status(201).json({ message: 'Leave request submitted successfully.', leaveRequest });
+  } catch (err) {
+    console.error('[submitLeaveRequest]', err.message);
+    return res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
+// PUT /api/groups/:id/leave-requests/:requestId
+const respondToLeaveRequest = async (req, res) => {
+  try {
+    const groupId = parseInt(req.params.id);
+    const requestId = parseInt(req.params.requestId);
+    const { action } = req.body;
+
+    if (isNaN(groupId) || isNaN(requestId)) return res.status(400).json({ message: 'Invalid IDs.' });
+    if (!['approve', 'reject'].includes(action)) return res.status(400).json({ message: 'Action must be "approve" or "reject".' });
+
+    const group = await GroupReservation.findById(groupId);
+    if (!group) return res.status(404).json({ message: 'Group not found.' });
+    if (group.leaderUserId !== req.user.id) return res.status(403).json({ message: 'Only the group leader can respond to leave requests.' });
+
+    const result = action === 'approve'
+      ? await GroupReservation.approveLeaveRequest(requestId, groupId)
+      : await GroupReservation.rejectLeaveRequest(requestId, groupId);
+
+    if (!result) return res.status(404).json({ message: 'Leave request not found.' });
+    if (result.error) return res.status(400).json({ message: result.error });
+
+    return res.status(200).json({ message: `Leave request ${action}d successfully.` });
+  } catch (err) {
+    console.error('[respondToLeaveRequest]', err.message);
+    return res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
+// DELETE /api/groups/:id/members/:userId
+const removeMember = async (req, res) => {
+  try {
+    const groupId = parseInt(req.params.id);
+    const memberUserId = parseInt(req.params.userId);
+
+    if (isNaN(groupId) || isNaN(memberUserId)) return res.status(400).json({ message: 'Invalid IDs.' });
+
+    const group = await GroupReservation.findById(groupId);
+    if (!group) return res.status(404).json({ message: 'Group not found.' });
+    if (group.leaderUserId !== req.user.id) return res.status(403).json({ message: 'Only the group leader can remove members.' });
+    if (group.leaderUserId === memberUserId) return res.status(400).json({ message: 'Group leader cannot be removed.' });
+
+    const result = await GroupReservation.removeMember(groupId, memberUserId);
+    if (!result) return res.status(404).json({ message: 'Group not found.' });
+    if (result.error) return res.status(400).json({ message: result.error });
+
+    return res.status(200).json({ message: 'Member removed successfully.' });
+  } catch (err) {
+    console.error('[removeGroupMember]', err.message);
+    return res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
 // GET /api/groups/my-requests
 const listMyRequests = async (req, res) => {
   try {
@@ -387,4 +467,18 @@ const listMyRequests = async (req, res) => {
   }
 };
 
-module.exports = { create, listOpen, listMine, getOne, update, cancel, submitJoinRequest, listJoinRequests, respondToRequest, listMyRequests };
+module.exports = {
+  create,
+  listOpen,
+  listMine,
+  getOne,
+  update,
+  cancel,
+  submitJoinRequest,
+  submitLeaveRequest,
+  listJoinRequests,
+  respondToRequest,
+  respondToLeaveRequest,
+  removeMember,
+  listMyRequests,
+};

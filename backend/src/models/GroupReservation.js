@@ -53,6 +53,26 @@ const GroupReservation = {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
       )
     `);
+
+    await pool.execute(`
+      ALTER TABLE join_requests
+      MODIFY status ENUM('pending','approved','rejected','left','removed') NOT NULL DEFAULT 'pending'
+    `);
+
+    await pool.execute(`
+      CREATE TABLE IF NOT EXISTS leave_requests (
+        id                      INT AUTO_INCREMENT PRIMARY KEY,
+        group_reservation_id    INT NOT NULL,
+        user_id                 INT NOT NULL,
+        player_count            INT NOT NULL,
+        status                  ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+        created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_leave_request_member (group_reservation_id, user_id, status),
+        FOREIGN KEY (group_reservation_id) REFERENCES group_reservations(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `);
   },
 
   // Create a new open group reservation
@@ -234,6 +254,16 @@ const GroupReservation = {
     return newStatus;
   },
 
+  async findApprovedMembership(groupReservationId, userId) {
+    const [rows] = await pool.execute(
+      `SELECT id, player_count AS playerCount
+       FROM join_requests
+       WHERE group_reservation_id = ? AND user_id = ? AND status = 'approved'`,
+      [groupReservationId, userId]
+    );
+    return rows[0] || null;
+  },
+
   // --- Join Requests (T-16 | Tuna Öcal) ---
 
   // Create a join request
@@ -257,7 +287,7 @@ const GroupReservation = {
     const [rows] = await pool.execute(
       `SELECT id, status, player_count AS playerCount
        FROM join_requests
-       WHERE group_reservation_id = ? AND user_id = ?`,
+       WHERE group_reservation_id = ? AND user_id = ? AND status IN ('pending', 'approved')`,
       [groupReservationId, userId]
     );
     return rows[0] || null;
@@ -267,9 +297,14 @@ const GroupReservation = {
   async findJoinRequestsByGroup(groupReservationId) {
     const [rows] = await pool.execute(
       `SELECT jr.id, jr.user_id AS userId, u.username, jr.player_count AS playerCount,
-              jr.status, jr.created_at
+              jr.status, jr.created_at,
+              lr.id AS leaveRequestId, lr.status AS leaveStatus
        FROM join_requests jr
        JOIN users u ON u.id = jr.user_id
+       LEFT JOIN leave_requests lr
+         ON lr.group_reservation_id = jr.group_reservation_id
+        AND lr.user_id = jr.user_id
+        AND lr.status = 'pending'
        WHERE jr.group_reservation_id = ?
        ORDER BY jr.created_at ASC`,
       [groupReservationId]
@@ -312,6 +347,109 @@ const GroupReservation = {
     return { success: true, requestUserId: rows[0].userId };
   },
 
+  async createLeaveRequest({ groupReservationId, userId }) {
+    const membership = await GroupReservation.findApprovedMembership(groupReservationId, userId);
+    if (!membership) return null;
+
+    const [existing] = await pool.execute(
+      `SELECT id, status FROM leave_requests
+       WHERE group_reservation_id = ? AND user_id = ? AND status = 'pending'`,
+      [groupReservationId, userId]
+    );
+    if (existing[0]) return { error: 'Leave request is already pending.' };
+
+    const [result] = await pool.execute(
+      `INSERT INTO leave_requests (group_reservation_id, user_id, player_count)
+       VALUES (?, ?, ?)`,
+      [groupReservationId, userId, membership.playerCount]
+    );
+
+    return {
+      id: result.insertId,
+      groupReservationId,
+      userId,
+      playerCount: membership.playerCount,
+      status: 'pending',
+    };
+  },
+
+  async findLeaveRequestsByGroup(groupReservationId) {
+    const [rows] = await pool.execute(
+      `SELECT lr.id, lr.user_id AS userId, u.username, lr.player_count AS playerCount,
+              lr.status, lr.created_at
+       FROM leave_requests lr
+       JOIN users u ON u.id = lr.user_id
+       WHERE lr.group_reservation_id = ?
+       ORDER BY lr.created_at ASC`,
+      [groupReservationId]
+    );
+    return rows;
+  },
+
+  async approveLeaveRequest(requestId, groupId) {
+    const [rows] = await pool.execute(
+      `SELECT lr.id, lr.user_id AS userId, lr.player_count AS playerCount, lr.status,
+              gr.party_size AS partySize, gr.current_count AS currentCount
+       FROM leave_requests lr
+       JOIN group_reservations gr ON gr.id = lr.group_reservation_id
+       WHERE lr.id = ? AND lr.group_reservation_id = ?`,
+      [requestId, groupId]
+    );
+
+    const req = rows[0];
+    if (!req) return null;
+    if (req.status !== 'pending') return { error: 'Leave request is not pending.' };
+
+    const membership = await GroupReservation.findApprovedMembership(groupId, req.userId);
+    if (!membership) return { error: 'User is no longer an active member.' };
+
+    const newCount = Math.max(0, req.currentCount - membership.playerCount);
+    await pool.execute(`UPDATE leave_requests SET status = 'approved' WHERE id = ?`, [requestId]);
+    await pool.execute(
+      `UPDATE join_requests SET status = 'left'
+       WHERE group_reservation_id = ? AND user_id = ? AND status = 'approved'`,
+      [groupId, req.userId]
+    );
+    await GroupReservation.updateCount(groupId, newCount, req.partySize);
+    return { success: true, requestUserId: req.userId };
+  },
+
+  async rejectLeaveRequest(requestId, groupId) {
+    const [rows] = await pool.execute(
+      `SELECT id, user_id AS userId, status
+       FROM leave_requests
+       WHERE id = ? AND group_reservation_id = ?`,
+      [requestId, groupId]
+    );
+    if (!rows[0]) return null;
+    if (rows[0].status !== 'pending') return { error: 'Leave request is not pending.' };
+    await pool.execute(`UPDATE leave_requests SET status = 'rejected' WHERE id = ?`, [requestId]);
+    return { success: true, requestUserId: rows[0].userId };
+  },
+
+  async removeMember(groupId, userId) {
+    const group = await GroupReservation.findById(groupId);
+    if (!group) return null;
+
+    const membership = await GroupReservation.findApprovedMembership(groupId, userId);
+    if (!membership) return { error: 'User is not an active member.' };
+
+    const newCount = Math.max(0, group.currentCount - membership.playerCount);
+    await pool.execute(
+      `UPDATE join_requests SET status = 'removed'
+       WHERE group_reservation_id = ? AND user_id = ? AND status = 'approved'`,
+      [groupId, userId]
+    );
+    await pool.execute(
+      `UPDATE leave_requests SET status = 'rejected'
+       WHERE group_reservation_id = ? AND user_id = ? AND status = 'pending'`,
+      [groupId, userId]
+    );
+    await GroupReservation.updateCount(groupId, newCount, group.partySize);
+
+    return { success: true, removedUserId: userId };
+  },
+
   // Get user IDs of all pending/approved members (for group-cancelled notifications)
   async findActiveMembers(groupId) {
     const [rows] = await pool.execute(
@@ -327,12 +465,17 @@ const GroupReservation = {
     const [rows] = await pool.execute(
       `SELECT jr.id, jr.group_reservation_id AS groupId, jr.player_count AS playerCount,
               jr.status, jr.created_at,
+              lr.id AS leaveRequestId, lr.status AS leaveStatus,
               gr.reservation_name AS groupName,
               DATE_FORMAT(gr.reservation_date, '%Y-%m-%d') AS date,
               TIME_FORMAT(gr.start_time, '%H:%i') AS startTime
        FROM join_requests jr
        JOIN group_reservations gr ON gr.id = jr.group_reservation_id
-       WHERE jr.user_id = ?
+       LEFT JOIN leave_requests lr
+         ON lr.group_reservation_id = jr.group_reservation_id
+        AND lr.user_id = jr.user_id
+        AND lr.status = 'pending'
+       WHERE jr.user_id = ? AND jr.status IN ('pending', 'approved')
        ORDER BY jr.created_at DESC`,
       [userId]
     );

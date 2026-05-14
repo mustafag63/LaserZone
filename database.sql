@@ -47,14 +47,28 @@ CREATE TABLE IF NOT EXISTS join_requests (
     group_reservation_id INT NOT NULL,
     user_id              INT NOT NULL,
     player_count         INT NOT NULL,
-    status               ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+    status               ENUM('pending','approved','rejected','left','removed') NOT NULL DEFAULT 'pending',
     created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY unique_request (group_reservation_id, user_id),
     FOREIGN KEY (group_reservation_id) REFERENCES group_reservations(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- 4. Slot çalışma saatleri ve kapasite ayarları
+-- 4. Gruptan ayrılma istekleri
+CREATE TABLE IF NOT EXISTS leave_requests (
+    id                   INT AUTO_INCREMENT PRIMARY KEY,
+    group_reservation_id INT NOT NULL,
+    user_id              INT NOT NULL,
+    player_count         INT NOT NULL,
+    status               ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+    created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_leave_request_member (group_reservation_id, user_id, status),
+    FOREIGN KEY (group_reservation_id) REFERENCES group_reservations(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 5. Slot çalışma saatleri ve kapasite ayarları
 CREATE TABLE IF NOT EXISTS slot_settings (
     id                    TINYINT PRIMARY KEY DEFAULT 1,
     open_time             TIME NOT NULL DEFAULT '10:00:00',
@@ -70,7 +84,7 @@ INSERT IGNORE INTO slot_settings
 VALUES
     (1, '10:00:00', '22:00:00', 30, 20, TRUE);
 
--- 5. Admin tarafından bloke edilen slotlar
+-- 6. Admin tarafından bloke edilen slotlar
 CREATE TABLE IF NOT EXISTS slot_blocks (
     id         INT AUTO_INCREMENT PRIMARY KEY,
     block_date DATE NOT NULL,
@@ -81,7 +95,7 @@ CREATE TABLE IF NOT EXISTS slot_blocks (
     UNIQUE KEY unique_slot_block (block_date, start_time, end_time)
 );
 
--- 6. Geçmiş oyun / event arşivi
+-- 7. Geçmiş oyun / event arşivi
 CREATE TABLE IF NOT EXISTS past_events (
     id           INT AUTO_INCREMENT PRIMARY KEY,
     source_type  ENUM('reservation', 'group') NOT NULL,

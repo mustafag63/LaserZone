@@ -102,6 +102,43 @@ export default function MyGroups() {
     }
   }
 
+  const refreshGroupPanel = async (groupId) => {
+    const [requestData, groupData] = await Promise.all([
+      apiCall(`/api/groups/${groupId}/requests`),
+      apiCall('/api/groups/my'),
+    ])
+    setRequests(prev => ({ ...prev, [groupId]: requestData.requests }))
+    setGroups(groupData.groups)
+  }
+
+  const handleLeaveAction = async (groupId, leaveRequestId, action) => {
+    setActionLoading(prev => ({ ...prev, [`leave-${leaveRequestId}`]: true }))
+    try {
+      await apiCall(`/api/groups/${groupId}/leave-requests/${leaveRequestId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ action }),
+      })
+      await refreshGroupPanel(groupId)
+    } catch (err) {
+      alert(err.message || t('actionFailed'))
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`leave-${leaveRequestId}`]: false }))
+    }
+  }
+
+  const handleRemoveMember = async (groupId, userId) => {
+    if (!window.confirm(t('removeMemberConfirm'))) return
+    setActionLoading(prev => ({ ...prev, [`member-${userId}`]: true }))
+    try {
+      await apiCall(`/api/groups/${groupId}/members/${userId}`, { method: 'DELETE' })
+      await refreshGroupPanel(groupId)
+    } catch (err) {
+      alert(err.message || t('actionFailed'))
+    } finally {
+      setActionLoading(prev => ({ ...prev, [`member-${userId}`]: false }))
+    }
+  }
+
   return (
     <DashboardLayout>
       <div className="p-8">
@@ -198,7 +235,27 @@ export default function MyGroups() {
                                 </span>
                               </div>
                               <div className="flex items-center gap-2 flex-shrink-0">
-                                {r.status === 'pending' ? (
+                                {r.leaveStatus === 'pending' ? (
+                                  <>
+                                    <span className="px-2.5 py-1 rounded text-xs font-medium bg-yellow-900/40 text-yellow-400">
+                                      {t('leavePending')}
+                                    </span>
+                                    <button
+                                      onClick={() => handleLeaveAction(g.id, r.leaveRequestId, 'approve')}
+                                      disabled={!!actionLoading[`leave-${r.leaveRequestId}`]}
+                                      className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition disabled:opacity-50"
+                                    >
+                                      {actionLoading[`leave-${r.leaveRequestId}`] ? '…' : t('approveLeave')}
+                                    </button>
+                                    <button
+                                      onClick={() => handleLeaveAction(g.id, r.leaveRequestId, 'reject')}
+                                      disabled={!!actionLoading[`leave-${r.leaveRequestId}`]}
+                                      className="px-3 py-1.5 bg-red-900/50 hover:bg-red-800 text-red-400 hover:text-red-300 border border-red-700 text-xs font-medium rounded-lg transition disabled:opacity-50"
+                                    >
+                                      {actionLoading[`leave-${r.leaveRequestId}`] ? '…' : t('rejectLeave')}
+                                    </button>
+                                  </>
+                                ) : r.status === 'pending' ? (
                                   <>
                                     <button
                                       onClick={() => handleAction(g.id, r.id, 'approve')}
@@ -213,6 +270,19 @@ export default function MyGroups() {
                                       className="px-3 py-1.5 bg-red-900/50 hover:bg-red-800 text-red-400 hover:text-red-300 border border-red-700 text-xs font-medium rounded-lg transition disabled:opacity-50"
                                     >
                                       {actionLoading[r.id] ? '…' : t('reject')}
+                                    </button>
+                                  </>
+                                ) : r.status === 'approved' ? (
+                                  <>
+                                    <span className="px-2.5 py-1 rounded text-xs font-medium bg-green-900/40 text-green-400">
+                                      {t('approved')}
+                                    </span>
+                                    <button
+                                      onClick={() => handleRemoveMember(g.id, r.userId)}
+                                      disabled={!!actionLoading[`member-${r.userId}`]}
+                                      className="px-3 py-1.5 bg-red-900/50 hover:bg-red-800 text-red-400 hover:text-red-300 border border-red-700 text-xs font-medium rounded-lg transition disabled:opacity-50"
+                                    >
+                                      {actionLoading[`member-${r.userId}`] ? '…' : t('removeMember')}
                                     </button>
                                   </>
                                 ) : (

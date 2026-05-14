@@ -51,6 +51,7 @@ export default function BrowseGroups() {
   const [playerCount, setPlayerCount] = useState(1)
   const [joinLoading, setJoinLoading] = useState(false)
   const [joinMessage, setJoinMessage] = useState(null)
+  const [leaveLoading, setLeaveLoading] = useState({})
 
   const fetchMyRequests = async () => {
     try {
@@ -108,6 +109,27 @@ export default function BrowseGroups() {
       setJoinMessage({ type: 'error', text: err.message || t('failedJoinRequest') })
     } finally {
       setJoinLoading(false)
+    }
+  }
+
+  const handleLeaveRequest = async (groupId) => {
+    if (!window.confirm(t('leaveRequestConfirm'))) return
+    setLeaveLoading(prev => ({ ...prev, [groupId]: true }))
+    try {
+      const data = await apiCall(`/api/groups/${groupId}/leave`, { method: 'POST' })
+      setMyRequests(prev => ({
+        ...prev,
+        [groupId]: {
+          ...prev[groupId],
+          leaveRequestId: data.leaveRequest?.id,
+          leaveStatus: 'pending',
+        },
+      }))
+      alert(t('leaveRequestSent'))
+    } catch (err) {
+      alert(err.message || t('failedLeaveRequest'))
+    } finally {
+      setLeaveLoading(prev => ({ ...prev, [groupId]: false }))
     }
   }
 
@@ -238,9 +260,25 @@ export default function BrowseGroups() {
                           {t('yourGroup')}
                         </span>
                       ) : myReq ? (
-                        <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${requestBadge(myReq.status)}`}>
-                          {requestLabel(myReq.status)}
-                        </span>
+                        myReq.status === 'approved' ? (
+                          myReq.leaveStatus === 'pending' ? (
+                            <span className="px-3 py-1.5 bg-yellow-900/40 border border-yellow-700 rounded-lg text-xs font-medium text-yellow-400">
+                              {t('leaveRequested')}
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleLeaveRequest(g.id)}
+                              disabled={!!leaveLoading[g.id]}
+                              className="px-4 py-2 bg-red-900/50 hover:bg-red-800 text-red-300 border border-red-800 font-medium rounded-lg text-sm transition disabled:opacity-50"
+                            >
+                              {leaveLoading[g.id] ? '…' : t('leaveGroup')}
+                            </button>
+                          )
+                        ) : (
+                          <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${requestBadge(myReq.status)}`}>
+                            {requestLabel(myReq.status)}
+                          </span>
+                        )
                       ) : isFull ? (
                         <span className="px-3 py-1.5 bg-red-900/30 border border-red-800 rounded-lg text-xs font-semibold text-red-500">
                           {t('full')}
