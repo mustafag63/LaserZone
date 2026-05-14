@@ -53,3 +53,30 @@ CREATE TABLE IF NOT EXISTS join_requests (
     FOREIGN KEY (group_reservation_id) REFERENCES group_reservations(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+
+-- 4. Slot çalışma saatleri ve kapasite ayarları
+CREATE TABLE IF NOT EXISTS slot_settings (
+    id                    TINYINT PRIMARY KEY DEFAULT 1,
+    open_time             TIME NOT NULL DEFAULT '10:00:00',
+    close_time            TIME NOT NULL DEFAULT '22:00:00',
+    slot_duration_minutes INT NOT NULL DEFAULT 30,
+    max_capacity          INT NOT NULL DEFAULT 20,
+    is_open               BOOLEAN NOT NULL DEFAULT TRUE,
+    updated_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+INSERT IGNORE INTO slot_settings
+    (id, open_time, close_time, slot_duration_minutes, max_capacity, is_open)
+VALUES
+    (1, '10:00:00', '22:00:00', 30, 20, TRUE);
+
+-- 5. Admin tarafından bloke edilen slotlar
+CREATE TABLE IF NOT EXISTS slot_blocks (
+    id         INT AUTO_INCREMENT PRIMARY KEY,
+    block_date DATE NOT NULL,
+    start_time TIME NOT NULL,
+    end_time   TIME NOT NULL,
+    reason     VARCHAR(255) DEFAULT '',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_slot_block (block_date, start_time, end_time)
+);

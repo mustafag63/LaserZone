@@ -2,8 +2,7 @@
 // Group reservation model
 
 const pool = require('../config/db');
-
-const MAX_CAPACITY = 20;
+const Slot = require('./Slot');
 
 async function slotBooked(date, startTimeFull, { excludeReservationId = null, excludeGroupId = null } = {}) {
   const [r] = await pool.execute(
@@ -74,8 +73,9 @@ const GroupReservation = {
     }
 
     // Capacity check across both tables
+    const settings = await Slot.getSettings();
     const booked = await slotBooked(date, startTimeFull);
-    if (booked + leaderPlayerCount > MAX_CAPACITY) {
+    if (booked + leaderPlayerCount > settings.max_capacity) {
       return { error: 'slot_full' };
     }
 
@@ -199,8 +199,9 @@ const GroupReservation = {
     }
 
     // Conflict check — exclude this group, use partySize as the footprint
+    const settings = await Slot.getSettings();
     const booked = await slotBooked(date, startTimeFull, { excludeGroupId: id });
-    if (booked + partySize > MAX_CAPACITY) {
+    if (booked + partySize > settings.max_capacity) {
       return null; // slot full
     }
 

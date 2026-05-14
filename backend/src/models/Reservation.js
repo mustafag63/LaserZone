@@ -2,8 +2,7 @@
 // Reservation model — create with conflict check, list, cancel
 
 const pool = require('../config/db');
-
-const MAX_CAPACITY = 20;
+const Slot = require('./Slot');
 
 // Returns total players booked in a slot across both tables.
 // excludeReservationId and excludeGroupId allow excluding the record being updated.
@@ -49,8 +48,9 @@ const Reservation = {
     }
 
     // Conflict check — sum active players across reservations + groups
+    const settings = await Slot.getSettings();
     const booked = await slotBooked(pool, date, startTimeFull);
-    if (booked + playerCount > MAX_CAPACITY) {
+    if (booked + playerCount > settings.max_capacity) {
       return null; // slot full
     }
 
@@ -125,8 +125,9 @@ const Reservation = {
     }
 
     // Conflict check — exclude the current reservation, check both tables
+    const settings = await Slot.getSettings();
     const booked = await slotBooked(pool, date, startTimeFull, { excludeReservationId: id });
-    if (booked + playerCount > MAX_CAPACITY) {
+    if (booked + playerCount > settings.max_capacity) {
       return null; // slot full
     }
 

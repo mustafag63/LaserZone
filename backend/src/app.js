@@ -11,6 +11,7 @@ const notificationRoutes  = require('./routes/notificationRoutes');
 const adminRoutes         = require('./routes/adminRoutes');
 const Notification        = require('./models/Notification');
 const GroupReservation    = require('./models/GroupReservation');
+const Slot                = require('./models/Slot');
 
 const app = express();
 
@@ -38,6 +39,7 @@ if (require.main === module) {
       console.log('Database connection OK');
       await Notification.createTable();
       await GroupReservation.createTables();
+      await Slot.createTables();
       app.listen(PORT, () => {
         console.log(`LaserZone API running on port ${PORT}`);
       });

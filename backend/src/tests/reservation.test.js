@@ -16,6 +16,20 @@ jest.mock('../config/db', () => {
   const execute = jest.fn(async (sql, params) => {
     // CREATE TABLE — no-op
     if (/CREATE TABLE/i.test(sql)) return [[], []];
+    if (/FROM slot_settings/i.test(sql)) {
+      return [[{
+        open_time: '10:00:00',
+        close_time: '22:00:00',
+        slot_duration_minutes: 30,
+        max_capacity: 20,
+        is_open: 1,
+      }]];
+    }
+    if (/FROM slot_blocks/i.test(sql)) return [[]];
+
+    if (/COALESCE\(SUM\(current_count\)/i.test(sql)) {
+      return [[{ booked: 0 }]];
+    }
 
     // Conflict check: COALESCE(SUM(player_count))
     if (/COALESCE\(SUM/i.test(sql)) {

@@ -2,9 +2,7 @@
 // Reservation creation API with conflict check
 
 const Reservation = require('../models/Reservation');
-
-const OPEN_HOUR  = 10;
-const CLOSE_HOUR = 22;
+const Slot = require('../models/Slot');
 
 // POST /api/reservations
 const create = async (req, res) => {
@@ -30,9 +28,9 @@ const create = async (req, res) => {
       return res.status(400).json({ message: 'Reservation date must be today or in the future.' });
     }
 
-    const hour = parseInt(time.split(':')[0]);
-    if (isNaN(hour) || hour < OPEN_HOUR || hour >= CLOSE_HOUR) {
-      return res.status(400).json({ message: `Time must be between ${OPEN_HOUR}:00 and ${CLOSE_HOUR - 1}:00.` });
+    const slotValidation = await Slot.validateBookableTime(date, time);
+    if (!slotValidation.valid) {
+      return res.status(400).json({ message: slotValidation.message });
     }
 
     const reservation = await Reservation.create({
@@ -109,9 +107,9 @@ const update = async (req, res) => {
       return res.status(400).json({ message: 'Reservation date must be today or in the future.' });
     }
 
-    const hour = parseInt(time.split(':')[0]);
-    if (isNaN(hour) || hour < OPEN_HOUR || hour >= CLOSE_HOUR) {
-      return res.status(400).json({ message: `Time must be between ${OPEN_HOUR}:00 and ${CLOSE_HOUR - 1}:00.` });
+    const slotValidation = await Slot.validateBookableTime(date, time);
+    if (!slotValidation.valid) {
+      return res.status(400).json({ message: slotValidation.message });
     }
 
     const result = await Reservation.update(id, req.user.id, { date, startTime: time, playerCount });

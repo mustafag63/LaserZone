@@ -3,9 +3,7 @@
 
 const GroupReservation = require('../models/GroupReservation');
 const Notification = require('../models/Notification');
-
-const OPEN_HOUR  = 10;
-const CLOSE_HOUR = 22;
+const Slot = require('../models/Slot');
 
 // POST /api/groups
 const create = async (req, res) => {
@@ -42,9 +40,9 @@ const create = async (req, res) => {
       return res.status(400).json({ message: 'Date must be today or in the future.' });
     }
 
-    const hour = parseInt(time.split(':')[0]);
-    if (isNaN(hour) || hour < OPEN_HOUR || hour >= CLOSE_HOUR) {
-      return res.status(400).json({ message: `Time must be between ${OPEN_HOUR}:00 and ${CLOSE_HOUR - 1}:00.` });
+    const slotValidation = await Slot.validateBookableTime(date, time);
+    if (!slotValidation.valid) {
+      return res.status(400).json({ message: slotValidation.message });
     }
 
     const group = await GroupReservation.create({
@@ -174,9 +172,9 @@ const update = async (req, res) => {
       return res.status(400).json({ message: 'Date must be today or in the future.' });
     }
 
-    const hour = parseInt(time.split(':')[0]);
-    if (isNaN(hour) || hour < OPEN_HOUR || hour >= CLOSE_HOUR) {
-      return res.status(400).json({ message: `Time must be between ${OPEN_HOUR}:00 and ${CLOSE_HOUR - 1}:00.` });
+    const slotValidation = await Slot.validateBookableTime(date, time);
+    if (!slotValidation.valid) {
+      return res.status(400).json({ message: slotValidation.message });
     }
 
     const group = await GroupReservation.findById(id);
