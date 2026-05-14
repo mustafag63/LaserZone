@@ -89,6 +89,25 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-2 py-4 space-y-1">
+        {user?.role === 'admin' && (
+          <NavLink
+            to="/admin/reservations"
+            className={({ isActive }) =>
+              `flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-purple-600 text-white'
+                  : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+              }`
+            }
+            title={collapsed ? 'Admin Reservations' : ''}
+          >
+            <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6M7 4h10a2 2 0 012 2v14l-3-2-3 2-3-2-3 2V6a2 2 0 012-2z" />
+            </svg>
+            {!collapsed && 'Admin Reservations'}
+          </NavLink>
+        )}
+
         <NavLink
           to="/dashboard"
           className={({ isActive }) =>

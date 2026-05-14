@@ -5,6 +5,7 @@ import Register from './components/Register'
 import Dashboard from './components/Dashboard'
 import BrowseGroups from './components/BrowseGroups'
 import MyGroups from './components/MyGroups'
+import AdminReservations from './components/AdminReservations'
 import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
@@ -20,6 +21,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/reservations"
+            element={
+              <ProtectedRoute role="admin">
+                <AdminReservations />
               </ProtectedRoute>
             }
           />
