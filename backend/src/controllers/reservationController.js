@@ -3,6 +3,7 @@
 
 const Reservation = require('../models/Reservation');
 const Slot = require('../models/Slot');
+const PastEvent = require('../models/PastEvent');
 
 // POST /api/reservations
 const create = async (req, res) => {
@@ -66,6 +67,17 @@ const getMyReservations = async (req, res) => {
   }
 };
 
+// GET /api/reservations/history
+const getHistory = async (req, res) => {
+  try {
+    const events = await PastEvent.findByUserId(req.user.id);
+    return res.status(200).json({ events });
+  } catch (err) {
+    console.error('[getReservationHistory]', err.message);
+    return res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
 // DELETE /api/reservations/:id
 const cancel = async (req, res) => {
   try {
@@ -124,4 +136,4 @@ const update = async (req, res) => {
   }
 };
 
-module.exports = { create, getMyReservations, cancel, update };
+module.exports = { create, getMyReservations, getHistory, cancel, update };

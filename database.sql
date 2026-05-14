@@ -80,3 +80,20 @@ CREATE TABLE IF NOT EXISTS slot_blocks (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY unique_slot_block (block_date, start_time, end_time)
 );
+
+-- 6. Geçmiş oyun / event arşivi
+CREATE TABLE IF NOT EXISTS past_events (
+    id           INT AUTO_INCREMENT PRIMARY KEY,
+    source_type  ENUM('reservation', 'group') NOT NULL,
+    source_id    INT NOT NULL,
+    user_id      INT NOT NULL,
+    event_name   VARCHAR(100) NOT NULL,
+    event_date   DATE NOT NULL,
+    start_time   TIME NOT NULL,
+    end_time     TIME NOT NULL,
+    player_count INT NOT NULL,
+    completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_past_event (source_type, source_id, user_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);

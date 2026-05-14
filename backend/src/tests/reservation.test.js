@@ -11,11 +11,61 @@ const jwt     = require('jsonwebtoken');
 // ─── Mock database ────────────────────────────────────────────────────────────
 jest.mock('../config/db', () => {
   const reservations = [];
+  const pastEvents = [];
   let nextId = 1;
 
   const execute = jest.fn(async (sql, params) => {
     // CREATE TABLE — no-op
     if (/CREATE TABLE/i.test(sql)) return [[], []];
+    if (/INSERT IGNORE INTO past_events/i.test(sql)) {
+      const [dateLimit, sameDate, timeLimit] = params;
+      for (const r of reservations) {
+        const ended = r.reservation_date < dateLimit || (r.reservation_date === sameDate && r.end_time <= timeLimit);
+        const exists = pastEvents.some(e => e.source_type === 'reservation' && e.source_id === r.id && e.user_id === r.user_id);
+        if (r.status === 'active' && ended && !exists) {
+          pastEvents.push({
+            id: pastEvents.length + 1,
+            source_type: 'reservation',
+            source_id: r.id,
+            user_id: r.user_id,
+            event_name: r.reservation_name,
+            event_date: r.reservation_date,
+            start_time: r.start_time,
+            end_time: r.end_time,
+            player_count: r.player_count,
+          });
+        }
+      }
+      return [{ affectedRows: 1 }];
+    }
+    if (/UPDATE reservations[\s\S]*SET status = 'completed'/i.test(sql)) {
+      const [dateLimit, sameDate, timeLimit] = params;
+      let affectedRows = 0;
+      for (const r of reservations) {
+        const ended = r.reservation_date < dateLimit || (r.reservation_date === sameDate && r.end_time <= timeLimit);
+        if (r.status === 'active' && ended) {
+          r.status = 'completed';
+          affectedRows += 1;
+        }
+      }
+      return [{ affectedRows }];
+    }
+    if (/FROM past_events/i.test(sql)) {
+      return [pastEvents
+        .filter(e => e.user_id === params[0])
+        .map(e => ({
+          id: e.id,
+          sourceType: e.source_type,
+          sourceId: e.source_id,
+          name: e.event_name,
+          date: e.event_date,
+          startTime: e.start_time.slice(0, 5),
+          endTime: e.end_time.slice(0, 5),
+          players: e.player_count,
+          completedAt: '2030-01-01T00:00:00.000Z',
+        }))];
+    }
+    if (/FROM group_reservations/i.test(sql) && /leader_user_id/i.test(sql)) return [{ affectedRows: 0 }];
     if (/FROM slot_settings/i.test(sql)) {
       return [[{
         open_time: '10:00:00',
@@ -83,7 +133,7 @@ jest.mock('../config/db', () => {
   });
 
   execute._seed  = (r) => reservations.push(r);
-  execute._clear = () => { reservations.length = 0; nextId = 1; };
+  execute._clear = () => { reservations.length = 0; pastEvents.length = 0; nextId = 1; };
 
   return { execute, query: execute };
 });
@@ -282,6 +332,49 @@ describe('Reservation API', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.reservations).toHaveLength(1);
+    });
+  });
+
+  describe('GET /api/reservations/history', () => {
+    it('stores past active reservations as completed events', async () => {
+      db.execute._seed({
+        id: 60, user_id: 1,
+        reservation_name: 'Past Game',
+        reservation_date: '2020-06-15',
+        start_time: '10:00:00', end_time: '11:00:00',
+        player_count: 4, status: 'active',
+      });
+
+      const res = await request(app)
+        .get('/api/reservations/history')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.events).toHaveLength(1);
+      expect(res.body.events[0]).toMatchObject({
+        sourceType: 'reservation',
+        sourceId: 60,
+        name: 'Past Game',
+        date: '2020-06-15',
+        players: 4,
+      });
+    });
+
+    it('does not expose another user past events', async () => {
+      db.execute._seed({
+        id: 61, user_id: 2,
+        reservation_name: 'Other Past Game',
+        reservation_date: '2020-06-15',
+        start_time: '10:00:00', end_time: '11:00:00',
+        player_count: 4, status: 'active',
+      });
+
+      const res = await request(app)
+        .get('/api/reservations/history')
+        .set('Authorization', `Bearer ${token}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.events).toEqual([]);
     });
   });
 
