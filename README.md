@@ -493,7 +493,7 @@ _Reservation history, occupancy reports, real-time availability_
 | Task | Description                                  | Assignee              | Est. | Status  |
 | ---- | -------------------------------------------- | --------------------- | ---- | ------- |
 | T-29 | Reservation history API & UI (customer)      | Mustafa Göçmen        | 4h   | ✅ Done |
-| T-30 | Occupancy reports & chart dashboard          | Begüm Rana Türkoğlu   | 6h   | 🔲 Todo |
+| T-30 | Occupancy reports & chart dashboard          | Begüm Rana Türkoğlu   | 6h   | ✅ Done|
 | T-31 | Real-time availability (WebSocket / polling) | Tuna Öcal             | 5h   | 🔲 Todo |
 | T-32 | Live update UI integration                   | Eylül Sena Altunsaray | 4h   | 🔲 Todo |
 | T-44 | TR/EN multilingual UI support                | Muhammet Gümüş        | 3h   | ✅ Done |
