@@ -50,21 +50,15 @@ export default function Dashboard() {
 
   const fetchReservations = async () => {
     try {
-      const token = localStorage.getItem('token')
-      const res = await fetch('http://localhost:5001/api/reservations/my', {
-        headers: { Authorization: token ? `Bearer ${token}` : '' },
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setReservations(data.reservations)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data.reservations))
-        return
-      }
-    } catch { /* fall through */ }
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY)
-      if (stored) setReservations(JSON.parse(stored))
-    } catch { setReservations([]) }
+      const data = await apiCall('/api/reservations/my')
+      setReservations(data.reservations)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data.reservations))
+    } catch {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY)
+        if (stored) setReservations(JSON.parse(stored))
+      } catch { setReservations([]) }
+    }
   }
 
   const fetchGroups = async () => {
@@ -94,12 +88,8 @@ export default function Dashboard() {
     if (!window.confirm(t('cancelReservationConfirm'))) return
     setCancellingId(id)
     try {
-      const token = localStorage.getItem('token')
-      const res = await fetch(`http://localhost:5001/api/reservations/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: token ? `Bearer ${token}` : '' },
-      })
-      if (res.ok) fetchReservations()
+      await apiCall(`/api/reservations/${id}`, { method: 'DELETE' })
+      fetchReservations()
     } catch { /* ignore */ } finally { setCancellingId(null) }
   }
 

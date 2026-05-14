@@ -7,6 +7,7 @@ import Dashboard from './components/Dashboard'
 import BrowseGroups from './components/BrowseGroups'
 import MyGroups from './components/MyGroups'
 import AdminReservations from './components/AdminReservations'
+import OccupancyDashboard from './components/OccupancyDashboard'
 import ProtectedRoute from './components/ProtectedRoute'
 import './App.css'
 
@@ -47,6 +48,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <MyGroups />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/reports"
+              element={
+                <ProtectedRoute role="admin">
+                  <OccupancyDashboard />
                 </ProtectedRoute>
               }
             />

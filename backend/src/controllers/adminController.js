@@ -164,4 +164,86 @@ const cancelReservation = async (req, res) => {
   }
 };
 
-module.exports = { getAllReservations, approveReservation, cancelReservation };
+// GET /api/admin/reports/occupancy
+// T-30 | Begüm Rana Türkoğlu | Sprint 3
+// Query params: range = 'week' | 'month' (default: 'week')
+const getOccupancyReport = async (req, res) => {
+  try {
+    const range = req.query.range === 'month' ? 30 : 7;
+
+    // --- 1. Status summary (active / cancelled / completed) ---
+    const [statusRows] = await pool.execute(`
+      SELECT status, COUNT(*) AS count
+      FROM reservations
+      WHERE reservation_date >= CURDATE() - INTERVAL ? DAY
+      GROUP BY status
+    `, [range]);
+
+    const statusSummary = { active: 0, cancelled: 0, completed: 0 };
+    for (const row of statusRows) {
+      if (row.status in statusSummary) statusSummary[row.status] = Number(row.count);
+    }
+
+    // --- 2. Daily occupancy (player_count per day) ---
+    const [dailyRows] = await pool.execute(`
+      SELECT
+        DATE_FORMAT(reservation_date, '%Y-%m-%d') AS day,
+        COALESCE(SUM(player_count), 0)            AS players
+      FROM reservations
+      WHERE reservation_date >= CURDATE() - INTERVAL ? DAY
+        AND status = 'active'
+      GROUP BY day
+      ORDER BY day ASC
+    `, [range]);
+
+    // --- 3. Busiest hours (slot-level player counts) ---
+    const [hourRows] = await pool.execute(`
+      SELECT
+        TIME_FORMAT(start_time, '%H:00') AS hour,
+        COALESCE(SUM(player_count), 0)  AS players
+      FROM reservations
+      WHERE reservation_date >= CURDATE() - INTERVAL ? DAY
+        AND status = 'active'
+      GROUP BY hour
+      ORDER BY players DESC
+      LIMIT 5
+    `, [range]);
+
+    // --- 4. Total players in period ---
+    const [totalRows] = await pool.execute(`
+      SELECT COALESCE(SUM(player_count), 0) AS totalPlayers
+      FROM reservations
+      WHERE reservation_date >= CURDATE() - INTERVAL ? DAY
+        AND status = 'active'
+    `, [range]);
+
+    // --- 5. Group reservation summary ---
+    const [groupRows] = await pool.execute(`
+      SELECT
+        COUNT(*)                              AS totalGroups,
+        COALESCE(SUM(current_count), 0)       AS totalGroupPlayers,
+        COALESCE(AVG(current_count / NULLIF(party_size, 0) * 100), 0) AS avgFillRate
+      FROM group_reservations
+      WHERE reservation_date >= CURDATE() - INTERVAL ? DAY
+        AND status IN ('open', 'closed')
+    `, [range]);
+
+    return res.status(200).json({
+      range,
+      statusSummary,
+      dailyOccupancy: dailyRows,
+      busiestHours: hourRows,
+      totalPlayers: Number(totalRows[0].totalPlayers),
+      groupSummary: {
+        totalGroups: Number(groupRows[0].totalGroups),
+        totalGroupPlayers: Number(groupRows[0].totalGroupPlayers),
+        avgFillRate: Math.round(Number(groupRows[0].avgFillRate)),
+      },
+    });
+  } catch (err) {
+    console.error('[getOccupancyReport]', err.message);
+    return res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
+module.exports = { getAllReservations, approveReservation, cancelReservation, getOccupancyReport };

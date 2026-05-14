@@ -2,11 +2,12 @@
 
 const express = require('express');
 const router = express.Router();
-const { getAllReservations, approveReservation, cancelReservation } = require('../controllers/adminController');
+const { getAllReservations, approveReservation, cancelReservation, getOccupancyReport } = require('../controllers/adminController');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 router.get('/reservations',             protect, adminOnly, getAllReservations);
 router.put('/reservations/:id/approve', protect, adminOnly, approveReservation);
 router.put('/reservations/:id/cancel',  protect, adminOnly, cancelReservation);
+router.get('/reports/occupancy',        protect, adminOnly, getOccupancyReport);
 
 module.exports = router;
