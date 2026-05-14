@@ -4,12 +4,13 @@ import MakeReservationModal from './MakeReservationModal'
 import EditReservationModal from './EditReservationModal'
 import EditGroupModal from './EditGroupModal'
 import { apiCall } from '../utils/api'
+import { useLanguage } from '../context/languageCore'
 
 const STORAGE_KEY = 'lz_reservations'
 
-function formatDate(dateStr) {
+function formatDate(dateStr, locale) {
   const date = new Date(dateStr + 'T00:00:00')
-  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  return date.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
 function format12Hour(time24) {
@@ -21,12 +22,13 @@ function format12Hour(time24) {
 }
 
 function CapacityBar({ current, total }) {
+  const { t } = useLanguage()
   const pct = Math.round((current / total) * 100)
   const color = pct >= 90 ? 'bg-red-500' : pct >= 60 ? 'bg-yellow-500' : 'bg-green-500'
   return (
     <div className="mt-2">
       <div className="flex justify-between text-xs text-gray-400 mb-1">
-        <span>{current} / {total} players</span>
+        <span>{current} / {total} {t('players').toLowerCase()}</span>
         <span>{pct}%</span>
       </div>
       <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
@@ -37,6 +39,7 @@ function CapacityBar({ current, total }) {
 }
 
 export default function Dashboard() {
+  const { t, locale } = useLanguage()
   const [reservations, setReservations] = useState([])
   const [groups, setGroups] = useState([])
   const [showModal, setShowModal] = useState(false)
@@ -88,7 +91,7 @@ export default function Dashboard() {
   }
 
   const handleCancel = async (id) => {
-    if (!window.confirm('Cancel this reservation?')) return
+    if (!window.confirm(t('cancelReservationConfirm'))) return
     setCancellingId(id)
     try {
       const token = localStorage.getItem('token')
@@ -101,7 +104,7 @@ export default function Dashboard() {
   }
 
   const handleCancelGroup = async (id) => {
-    if (!window.confirm('Cancel this group?')) return
+    if (!window.confirm(t('cancelGroupConfirm'))) return
     setCancellingGroupId(id)
     try {
       await apiCall(`/api/groups/${id}`, { method: 'DELETE' })
@@ -117,9 +120,9 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h2 className="text-2xl font-bold text-white">My Reservations</h2>
+            <h2 className="text-2xl font-bold text-white">{t('myReservations')}</h2>
             <p className="text-gray-400 text-sm mt-1">
-              {total} item{total !== 1 ? 's' : ''}
+              {t('reservationCount', { count: total, plural: total !== 1 ? 's' : '' })}
             </p>
           </div>
           <button
@@ -129,7 +132,7 @@ export default function Dashboard() {
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
             </svg>
-            Make Reservation
+            {t('makeReservation')}
           </button>
         </div>
 
@@ -140,8 +143,8 @@ export default function Dashboard() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
             </div>
-            <p className="text-gray-400 font-medium">No reservations yet</p>
-            <p className="text-gray-600 text-sm mt-1">Click "Make Reservation" to book your first session.</p>
+            <p className="text-gray-400 font-medium">{t('noReservations')}</p>
+            <p className="text-gray-600 text-sm mt-1">{t('noReservationsHint')}</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -154,18 +157,18 @@ export default function Dashboard() {
                   <div>
                     <p className="text-white font-semibold">{r.name}</p>
                     <p className="text-gray-400 text-sm mt-0.5">
-                      {formatDate(r.date)} · {format12Hour(r.startTime || r.time)} · {r.players} players
+                      {formatDate(r.date, locale)} · {format12Hour(r.startTime || r.time)} · {r.players} {t('players').toLowerCase()}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button onClick={() => setEditingReservation(r)}
                     className="px-3 py-1.5 text-xs font-medium bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white border border-gray-600 rounded-lg transition">
-                    Edit
+                    {t('edit')}
                   </button>
                   <button onClick={() => handleCancel(r.id)} disabled={cancellingId === r.id}
                     className="px-3 py-1.5 text-xs font-medium bg-red-900/40 hover:bg-red-800/60 text-red-400 hover:text-red-300 border border-red-800 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
-                    {cancellingId === r.id ? 'Cancelling…' : 'Cancel'}
+                    {cancellingId === r.id ? t('cancelling') : t('cancel')}
                   </button>
                 </div>
               </div>
@@ -183,16 +186,16 @@ export default function Dashboard() {
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="text-white font-semibold">{g.name}</p>
                           <span className="px-1.5 py-0.5 bg-purple-900/50 border border-purple-700 rounded text-xs text-purple-300 font-medium">
-                            Group
+                            {t('group')}
                           </span>
                           {isFull && (
                             <span className="px-1.5 py-0.5 bg-red-900/50 border border-red-700 rounded text-xs text-red-400 font-medium">
-                              Full
+                              {t('full')}
                             </span>
                           )}
                         </div>
                         <p className="text-gray-400 text-sm mt-0.5">
-                          {formatDate(g.date)} · {format12Hour(g.startTime)}{g.endTime ? ` – ${format12Hour(g.endTime)}` : ''}
+                          {formatDate(g.date, locale)} · {format12Hour(g.startTime)}{g.endTime ? ` – ${format12Hour(g.endTime)}` : ''}
                         </p>
                         <CapacityBar current={g.currentCount} total={g.partySize} />
                       </div>
@@ -202,11 +205,11 @@ export default function Dashboard() {
                         <>
                           <button onClick={() => setEditingGroup(g)}
                             className="px-3 py-1.5 text-xs font-medium bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white border border-gray-600 rounded-lg transition">
-                            Edit
+                            {t('edit')}
                           </button>
                           <button onClick={() => handleCancelGroup(g.id)} disabled={cancellingGroupId === g.id}
                             className="px-3 py-1.5 text-xs font-medium bg-red-900/40 hover:bg-red-800/60 text-red-400 hover:text-red-300 border border-red-800 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed">
-                            {cancellingGroupId === g.id ? '…' : 'Cancel'}
+                            {cancellingGroupId === g.id ? '…' : t('cancel')}
                           </button>
                         </>
                       )}

@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { apiCall } from '../utils/api'
+import { useLanguage } from '../context/languageCore'
 
 const MAX_CAPACITY = 20
 
 export default function MakeReservationModal({ onClose, onSave }) {
+  const { t } = useLanguage()
   const today = new Date().toISOString().split('T')[0]
 
   const [isOpenGroup, setIsOpenGroup] = useState(false)
@@ -52,11 +54,11 @@ export default function MakeReservationModal({ onClose, onSave }) {
     e.preventDefault()
     setApiError('')
     if (!name.trim() || name.trim().length < 2) {
-      setApiError('Ad en az 2 karakter olmalıdır.')
+      setApiError(t('nameTooShort'))
       return
     }
     if (!date) {
-      setApiError('Lütfen bir tarih seçin.')
+      setApiError(t('selectDate'))
       return
     }
     setSubmitting(true)
@@ -80,7 +82,7 @@ export default function MakeReservationModal({ onClose, onSave }) {
       }
       onSave()
     } catch (err) {
-      setApiError(err.message || 'İşlem başarısız.')
+      setApiError(err.message || t('actionFailed'))
     } finally {
       setSubmitting(false)
     }
@@ -98,7 +100,7 @@ export default function MakeReservationModal({ onClose, onSave }) {
       <div className="bg-gray-900 rounded-xl shadow-2xl w-full max-w-md border border-gray-700">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-700">
           <h2 className="text-lg font-bold text-white">
-            {isOpenGroup ? 'Create Open Group' : 'New Reservation'}
+            {isOpenGroup ? t('createOpenGroup') : t('newReservation')}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,9 +126,9 @@ export default function MakeReservationModal({ onClose, onSave }) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
               <div className="text-left">
-                <p className="text-sm font-medium">Mark as Open Group</p>
+                <p className="text-sm font-medium">{t('markAsOpenGroup')}</p>
                 {isOpenGroup && (
-                  <p className="text-xs text-purple-400 mt-0.5">Open for external members</p>
+                  <p className="text-xs text-purple-400 mt-0.5">{t('openForExternalMembers')}</p>
                 )}
               </div>
             </div>
@@ -138,13 +140,13 @@ export default function MakeReservationModal({ onClose, onSave }) {
           {/* Name */}
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
-              {isOpenGroup ? 'Group Name' : 'Reservation Name'}
+              {isOpenGroup ? t('groupName') : t('reservationName')}
             </label>
             <input
               type="text"
               value={name}
               onChange={e => setName(e.target.value)}
-              placeholder={isOpenGroup ? 'e.g. Friday Night Crew...' : 'e.g. Birthday Party, Friday Night...'}
+              placeholder={isOpenGroup ? t('groupNamePlaceholder') : t('reservationNamePlaceholder')}
               className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
             />
           </div>
@@ -152,7 +154,7 @@ export default function MakeReservationModal({ onClose, onSave }) {
           {/* Date + Time */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Date</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">{t('date')}</label>
               <input
                 type="date"
                 value={date}
@@ -163,10 +165,10 @@ export default function MakeReservationModal({ onClose, onSave }) {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Time</label>
+              <label className="block text-sm font-medium text-gray-300 mb-2">{t('time')}</label>
               {loadingSlots ? (
                 <div className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-gray-500 text-sm">
-                  Yükleniyor…
+                  {t('loadingSlots')}
                 </div>
               ) : (
                 <select
@@ -175,10 +177,10 @@ export default function MakeReservationModal({ onClose, onSave }) {
                   disabled={!date || slots.length === 0}
                   className="w-full px-4 py-2.5 bg-gray-800 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition disabled:opacity-50"
                 >
-                  {!date && <option value="">Önce tarih seç</option>}
+                  {!date && <option value="">{t('selectDateFirst')}</option>}
                   {slots.map(s => (
                     <option key={s.time} value={s.time} disabled={!s.available}>
-                      {s.time}{!s.available ? ' — Dolu' : ''}
+                      {s.time}{!s.available ? ` — ${t('slotFull')}` : ''}
                     </option>
                   ))}
                 </select>
@@ -190,7 +192,7 @@ export default function MakeReservationModal({ onClose, onSave }) {
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-gray-800 border border-gray-700 rounded-xl p-4">
               <p className="text-xs font-medium text-gray-400 mb-3">
-                {isOpenGroup ? 'My Team' : 'Players'}
+                {isOpenGroup ? t('myTeam') : t('players')}
               </p>
               <div className="flex items-center justify-between gap-2">
                 <button type="button" onClick={() => handleMyPlayersChange(myPlayers - 1)} disabled={myPlayers <= 3}
@@ -202,7 +204,7 @@ export default function MakeReservationModal({ onClose, onSave }) {
             </div>
 
             <div className={`border rounded-xl p-4 transition ${isOpenGroup ? 'bg-gray-800 border-gray-700' : 'bg-gray-800/40 border-gray-800 opacity-40 pointer-events-none select-none'}`}>
-              <p className="text-xs font-medium text-gray-400 mb-3">External Join</p>
+              <p className="text-xs font-medium text-gray-400 mb-3">{t('externalJoin')}</p>
               <div className="flex items-center justify-between gap-2">
                 <button type="button" onClick={() => handleExternalChange(external - 1)} disabled={!isOpenGroup || external <= 0}
                   className="w-9 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-bold flex items-center justify-center disabled:opacity-30 disabled:cursor-not-allowed transition">−</button>
@@ -214,8 +216,8 @@ export default function MakeReservationModal({ onClose, onSave }) {
           </div>
 
           <p className="text-sm text-gray-400 text-center">
-            Total: <span className="text-white font-bold">{total}</span>
-            <span className="text-gray-600"> / {MAX_CAPACITY} max</span>
+            {t('total')}: <span className="text-white font-bold">{total}</span>
+            <span className="text-gray-600"> / {MAX_CAPACITY} {t('max')}</span>
           </p>
 
           {apiError && (
@@ -225,11 +227,11 @@ export default function MakeReservationModal({ onClose, onSave }) {
           <div className="flex gap-3 pt-1">
             <button type="button" onClick={onClose} disabled={submitting}
               className="flex-1 py-2.5 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-800 transition font-medium disabled:opacity-50">
-              Cancel
+              {t('cancel')}
             </button>
             <button type="submit" disabled={submitting}
               className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold transition shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
-              {submitting ? 'Creating…' : (isOpenGroup ? 'Create Group' : 'Make Reservation')}
+              {submitting ? t('creating') : (isOpenGroup ? t('createGroup') : t('makeReservation'))}
             </button>
           </div>
         </form>

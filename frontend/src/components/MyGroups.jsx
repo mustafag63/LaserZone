@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import DashboardLayout from './DashboardLayout'
 import { apiCall } from '../utils/api'
+import { useLanguage } from '../context/languageCore'
 
-function formatDate(dateStr) {
+function formatDate(dateStr, locale) {
   const date = new Date(dateStr + 'T00:00:00')
-  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+  return date.toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' })
 }
 
 function format12Hour(time24) {
@@ -15,12 +16,13 @@ function format12Hour(time24) {
 }
 
 function CapacityBar({ current, total, className = '' }) {
+  const { t } = useLanguage()
   const pct = Math.round((current / total) * 100)
   const color = pct >= 90 ? 'bg-red-500' : pct >= 60 ? 'bg-yellow-500' : 'bg-green-500'
   return (
     <div className={className}>
       <div className="flex justify-between text-xs text-gray-400 mb-1">
-        <span>{current} / {total} players</span>
+        <span>{current} / {total} {t('players').toLowerCase()}</span>
         <span>{pct}%</span>
       </div>
       <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
@@ -36,13 +38,8 @@ const STATUS_STYLE = {
   cancelled: 'text-gray-400 bg-gray-700/50 border-gray-600',
 }
 
-const STATUS_LABEL = {
-  open:      'Open',
-  closed:    'Full',
-  cancelled: 'Cancelled',
-}
-
 export default function MyGroups() {
+  const { t, locale } = useLanguage()
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -57,7 +54,7 @@ export default function MyGroups() {
       const data = await apiCall('/api/groups/my')
       setGroups(data.groups)
     } catch (err) {
-      setError(err.message || 'Failed to load your groups')
+      setError(err.message || t('actionFailed'))
     } finally {
       setLoading(false)
     }
@@ -99,7 +96,7 @@ export default function MyGroups() {
         setGroups(data.groups)
       }
     } catch (err) {
-      alert(err.message || 'Action failed')
+      alert(err.message || t('actionFailed'))
     } finally {
       setActionLoading(prev => ({ ...prev, [requestId]: false }))
     }
@@ -109,8 +106,8 @@ export default function MyGroups() {
     <DashboardLayout>
       <div className="p-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white">My Groups</h2>
-          <p className="text-gray-400 text-sm mt-1">Manage your group reservations and approve join requests</p>
+          <h2 className="text-2xl font-bold text-white">{t('myGroups')}</h2>
+          <p className="text-gray-400 text-sm mt-1">{t('manageGroups')}</p>
         </div>
 
         {error && (
@@ -128,8 +125,8 @@ export default function MyGroups() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <p className="text-gray-400 font-medium">You haven't created any groups</p>
-            <p className="text-gray-600 text-sm mt-1">Go to My Reservations and toggle "Mark as Open Group" to create one.</p>
+            <p className="text-gray-400 font-medium">{t('noGroups')}</p>
+            <p className="text-gray-600 text-sm mt-1">{t('noGroupsHint')}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -149,11 +146,11 @@ export default function MyGroups() {
                         <div className="flex items-center gap-3 mb-1 flex-wrap">
                           <p className="text-white font-semibold">{g.name}</p>
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium border ${STATUS_STYLE[g.status] || STATUS_STYLE.open}`}>
-                            {STATUS_LABEL[g.status] || g.status}
+                            {g.status === 'closed' ? t('full') : t(g.status)}
                           </span>
                         </div>
                         <p className="text-gray-400 text-sm">
-                          {formatDate(g.date)} · {format12Hour(g.startTime)} – {format12Hour(g.endTime)}
+                          {formatDate(g.date, locale)} · {format12Hour(g.startTime)} – {format12Hour(g.endTime)}
                         </p>
                         <CapacityBar current={g.currentCount} total={g.partySize} className="mt-3" />
                       </div>
@@ -162,7 +159,7 @@ export default function MyGroups() {
                         onClick={() => toggleExpand(g.id)}
                         className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 text-sm rounded-lg transition flex-shrink-0"
                       >
-                        <span>Requests</span>
+                        <span>{t('requests')}</span>
                         {!isExpanded && pendingCount > 0 && (
                           <span className="w-5 h-5 bg-yellow-500 text-black rounded-full text-xs font-bold flex items-center justify-center">
                             {pendingCount}
@@ -186,7 +183,7 @@ export default function MyGroups() {
                           <div className="w-5 h-5 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
                         </div>
                       ) : groupRequests.length === 0 ? (
-                        <p className="text-gray-500 text-sm text-center py-4">No join requests yet.</p>
+                        <p className="text-gray-500 text-sm text-center py-4">{t('noJoinRequests')}</p>
                       ) : (
                         <div className="space-y-2">
                           {groupRequests.map(r => (
@@ -197,7 +194,7 @@ export default function MyGroups() {
                               <div>
                                 <span className="text-white text-sm font-medium">@{r.username}</span>
                                 <span className="text-gray-400 text-xs ml-2">
-                                  {r.playerCount} player{r.playerCount !== 1 ? 's' : ''}
+                                  {r.playerCount} {t('players').toLowerCase()}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2 flex-shrink-0">
@@ -208,14 +205,14 @@ export default function MyGroups() {
                                       disabled={!!actionLoading[r.id]}
                                       className="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition disabled:opacity-50"
                                     >
-                                      {actionLoading[r.id] ? '…' : 'Approve'}
+                                      {actionLoading[r.id] ? '…' : t('approve')}
                                     </button>
                                     <button
                                       onClick={() => handleAction(g.id, r.id, 'reject')}
                                       disabled={!!actionLoading[r.id]}
                                       className="px-3 py-1.5 bg-red-900/50 hover:bg-red-800 text-red-400 hover:text-red-300 border border-red-700 text-xs font-medium rounded-lg transition disabled:opacity-50"
                                     >
-                                      {actionLoading[r.id] ? '…' : 'Reject'}
+                                      {actionLoading[r.id] ? '…' : t('reject')}
                                     </button>
                                   </>
                                 ) : (
@@ -224,7 +221,7 @@ export default function MyGroups() {
                                       ? 'bg-green-900/40 text-green-400'
                                       : 'bg-red-900/40 text-red-400'
                                   }`}>
-                                    {r.status}
+                                    {t(r.status)}
                                   </span>
                                 )}
                               </div>

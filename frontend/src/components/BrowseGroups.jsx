@@ -2,10 +2,11 @@ import { useState, useEffect } from 'react'
 import DashboardLayout from './DashboardLayout'
 import { apiCall } from '../utils/api'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/languageCore'
 
-function formatDate(dateStr) {
+function formatDate(dateStr, locale) {
   const date = new Date(dateStr + 'T00:00:00')
-  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
+  return date.toLocaleDateString(locale, { weekday: 'long', month: 'short', day: 'numeric' })
 }
 
 function format12Hour(time24) {
@@ -16,12 +17,13 @@ function format12Hour(time24) {
 }
 
 function CapacityBar({ current, total, className = '' }) {
+  const { t } = useLanguage()
   const pct = Math.round((current / total) * 100)
   const color = pct >= 90 ? 'bg-red-500' : pct >= 60 ? 'bg-yellow-500' : 'bg-green-500'
   return (
     <div className={className}>
       <div className="flex justify-between text-xs text-gray-400 mb-1">
-        <span>{current} / {total} players</span>
+        <span>{current} / {total} {t('players').toLowerCase()}</span>
         <span>{pct}%</span>
       </div>
       <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
@@ -33,6 +35,7 @@ function CapacityBar({ current, total, className = '' }) {
 
 export default function BrowseGroups() {
   const { user } = useAuth()
+  const { t, locale } = useLanguage()
   const [groups, setGroups] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -70,7 +73,7 @@ export default function BrowseGroups() {
       setGroups(data.groups)
       setError(null)
     } catch (err) {
-      setError(err.message || 'Failed to load groups')
+      setError(err.message || t('actionFailed'))
     } finally {
       setLoading(false)
     }
@@ -93,7 +96,7 @@ export default function BrowseGroups() {
         method: 'POST',
         body: JSON.stringify({ playerCount }),
       })
-      setJoinMessage({ type: 'success', text: 'Request sent! Waiting for leader approval.' })
+      setJoinMessage({ type: 'success', text: t('requestSent') })
       setMyRequests(prev => ({ ...prev, [joinModal.id]: { groupId: joinModal.id, status: 'pending', playerCount } }))
       setTimeout(() => {
         setJoinModal(null)
@@ -102,7 +105,7 @@ export default function BrowseGroups() {
         fetchGroups()
       }, 1800)
     } catch (err) {
-      setJoinMessage({ type: 'error', text: err.message || 'Failed to send join request' })
+      setJoinMessage({ type: 'error', text: err.message || t('failedJoinRequest') })
     } finally {
       setJoinLoading(false)
     }
@@ -115,34 +118,34 @@ export default function BrowseGroups() {
   }
 
   const requestLabel = (status) => {
-    if (status === 'approved') return 'Approved'
-    if (status === 'rejected') return 'Rejected'
-    return 'Pending'
+    if (status === 'approved') return t('approved')
+    if (status === 'rejected') return t('rejected')
+    return t('pending')
   }
 
   return (
     <DashboardLayout>
       <div className="p-8">
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-white">Browse Open Groups</h2>
-          <p className="text-gray-400 text-sm mt-1">Find a group and send a join request to the leader</p>
+          <h2 className="text-2xl font-bold text-white">{t('browseGroups')}</h2>
+          <p className="text-gray-400 text-sm mt-1">{t('browseGroupsSubtitle')}</p>
         </div>
 
         {/* Filters */}
         <div className="bg-gray-800 border border-gray-700 rounded-xl p-5 mb-6">
           <form onSubmit={handleSearch} className="flex flex-wrap items-end gap-4">
             <div className="flex-1 min-w-[180px]">
-              <label className="block text-gray-400 text-xs font-medium mb-1.5">Search by name</label>
+              <label className="block text-gray-400 text-xs font-medium mb-1.5">{t('searchByName')}</label>
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Group name..."
+                placeholder={t('groupNameSearchPlaceholder')}
                 className="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-purple-500"
               />
             </div>
             <div className="min-w-[160px]">
-              <label className="block text-gray-400 text-xs font-medium mb-1.5">Date</label>
+              <label className="block text-gray-400 text-xs font-medium mb-1.5">{t('date')}</label>
               <input
                 type="date"
                 value={dateFilter}
@@ -157,13 +160,13 @@ export default function BrowseGroups() {
                 onChange={(e) => setAvailableOnly(e.target.checked)}
                 className="accent-purple-500"
               />
-              Available only
+              {t('availableOnly')}
             </label>
             <button
               type="submit"
               className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg text-sm transition"
             >
-              Search
+              {t('search')}
             </button>
             {(searchQuery || dateFilter || availableOnly) && (
               <button
@@ -171,7 +174,7 @@ export default function BrowseGroups() {
                 onClick={() => { setSearchQuery(''); setDateFilter(''); setAvailableOnly(false); setTimeout(fetchGroups, 0) }}
                 className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium rounded-lg text-sm transition"
               >
-                Clear
+                {t('clear')}
               </button>
             )}
           </form>
@@ -192,8 +195,8 @@ export default function BrowseGroups() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <p className="text-gray-400 font-medium">No open groups found</p>
-            <p className="text-gray-600 text-sm mt-1">Try changing your filters or check back later.</p>
+            <p className="text-gray-400 font-medium">{t('noOpenGroups')}</p>
+            <p className="text-gray-600 text-sm mt-1">{t('noOpenGroupsHint')}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -216,15 +219,15 @@ export default function BrowseGroups() {
                         <p className="text-white font-semibold truncate">{g.name}</p>
                         {isFull && (
                           <span className="px-2 py-0.5 bg-red-900/50 border border-red-700 rounded-full text-xs font-semibold text-red-400">
-                            Full
+                            {t('full')}
                           </span>
                         )}
                       </div>
                       <p className="text-gray-400 text-sm">
-                        {formatDate(g.date)} · {format12Hour(g.startTime)} – {format12Hour(g.endTime)}
+                        {formatDate(g.date, locale)} · {format12Hour(g.startTime)} – {format12Hour(g.endTime)}
                       </p>
                       <p className="text-gray-500 text-xs mt-0.5">
-                        Leader: {g.leaderUsername} · {isFull ? 'No spots left' : `${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} left`}
+                        {t('leader')}: {g.leaderUsername} · {isFull ? t('noSpotsLeft') : t('spotsLeft', { count: spotsLeft, plural: spotsLeft !== 1 ? 's' : '' })}
                       </p>
                       <CapacityBar current={g.currentCount} total={g.partySize} className="mt-3" />
                     </div>
@@ -232,7 +235,7 @@ export default function BrowseGroups() {
                     <div className="flex-shrink-0 pt-1">
                       {isOwn ? (
                         <span className="px-3 py-1.5 bg-gray-700 rounded-lg text-xs font-medium text-gray-400">
-                          Your Group
+                          {t('yourGroup')}
                         </span>
                       ) : myReq ? (
                         <span className={`px-3 py-1.5 rounded-lg text-xs font-medium ${requestBadge(myReq.status)}`}>
@@ -240,14 +243,14 @@ export default function BrowseGroups() {
                         </span>
                       ) : isFull ? (
                         <span className="px-3 py-1.5 bg-red-900/30 border border-red-800 rounded-lg text-xs font-semibold text-red-500">
-                          Full
+                          {t('full')}
                         </span>
                       ) : (
                         <button
                           onClick={() => { setJoinModal(g); setPlayerCount(1); setJoinMessage(null) }}
                           className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-medium rounded-lg text-sm transition shadow whitespace-nowrap"
                         >
-                          I Want to Join
+                          {t('wantToJoin')}
                         </button>
                       )}
                     </div>
@@ -263,18 +266,18 @@ export default function BrowseGroups() {
       {joinModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-md p-6">
-            <h3 className="text-lg font-bold text-white mb-1">Join "{joinModal.name}"</h3>
+            <h3 className="text-lg font-bold text-white mb-1">{t('joinGroupTitle', { name: joinModal.name })}</h3>
             <p className="text-gray-400 text-sm mb-0.5">
-              {formatDate(joinModal.date)} · {format12Hour(joinModal.startTime)} – {format12Hour(joinModal.endTime)}
+              {formatDate(joinModal.date, locale)} · {format12Hour(joinModal.startTime)} – {format12Hour(joinModal.endTime)}
             </p>
             <p className="text-gray-500 text-xs mb-5">
-              Your request will be sent to the group leader for approval.
+              {t('joinRequestHint')}
             </p>
 
             <CapacityBar current={joinModal.currentCount} total={joinModal.partySize} className="mb-5" />
 
             <label className="block text-gray-300 text-sm font-medium mb-2">
-              How many players are you bringing?
+              {t('joinPlayerQuestion')}
             </label>
             <div className="flex items-center gap-3 mb-5">
               <button
@@ -286,7 +289,7 @@ export default function BrowseGroups() {
                 onClick={() => setPlayerCount(p => Math.min(joinModal.partySize - joinModal.currentCount, p + 1))}
                 className="w-9 h-9 rounded-lg bg-gray-700 hover:bg-gray-600 text-white font-bold text-lg transition flex items-center justify-center"
               >+</button>
-              <span className="text-gray-500 text-xs ml-1">max {joinModal.partySize - joinModal.currentCount}</span>
+              <span className="text-gray-500 text-xs ml-1">{t('max')} {joinModal.partySize - joinModal.currentCount}</span>
             </div>
 
             {joinMessage && (
@@ -304,14 +307,14 @@ export default function BrowseGroups() {
                 onClick={() => { setJoinModal(null); setJoinMessage(null) }}
                 className="flex-1 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-gray-300 font-medium rounded-lg text-sm transition"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleJoinSubmit}
                 disabled={joinLoading}
                 className="flex-1 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-medium rounded-lg text-sm transition shadow disabled:opacity-50"
               >
-                {joinLoading ? 'Sending…' : 'Send Request'}
+                {joinLoading ? t('sending') : t('sendRequest')}
               </button>
             </div>
           </div>

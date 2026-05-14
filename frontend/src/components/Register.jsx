@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useLanguage } from '../context/languageCore'
+import LanguageToggle from './LanguageToggle'
 
 export default function Register() {
   const navigate = useNavigate()
   const { login } = useAuth()
+  const { t } = useLanguage()
   const [formData, setFormData] = useState({
     username: '',
     password: '',
@@ -17,17 +20,17 @@ export default function Register() {
     const newErrors = {}
 
     if (!formData.username) {
-      newErrors.username = 'Username is required'
+      newErrors.username = t('usernameRequired')
     } else if (formData.username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters'
+      newErrors.username = t('usernameMin')
     } else if (!/^[a-zA-Z0-9_]+$/.test(formData.username)) {
-      newErrors.username = 'Username can only contain letters, numbers, and underscores'
+      newErrors.username = t('usernameChars')
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required'
+      newErrors.password = t('passwordRequired')
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
+      newErrors.password = t('passwordMin')
     }
 
     setErrors(newErrors)
@@ -60,14 +63,14 @@ export default function Register() {
       const data = await response.json()
 
       if (!response.ok) {
-        setGeneralError(data.message || 'Registration failed. Please try again.')
+        setGeneralError(data.message || t('registerFailed'))
         return
       }
 
       login(data.user, data.token)
       navigate('/dashboard')
     } catch (error) {
-      setGeneralError('An error occurred. Please try again later.')
+      setGeneralError(t('genericError'))
       console.error('Register error:', error)
     } finally {
       setLoading(false)
@@ -77,12 +80,15 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-black flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        <div className="mb-3 flex justify-end">
+          <LanguageToggle />
+        </div>
         <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl p-8 animate-fade-in">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
               LaserZone
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">Create a new account</p>
+            <p className="text-gray-600 dark:text-gray-400">{t('registerSubtitle')}</p>
           </div>
 
           {generalError && (
@@ -94,7 +100,7 @@ export default function Register() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Username
+                {t('username')}
               </label>
               <input
                 type="text"
@@ -114,7 +120,7 @@ export default function Register() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Password
+                {t('password')}
               </label>
               <input
                 type="password"
@@ -137,15 +143,15 @@ export default function Register() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold py-2 rounded-lg hover:from-purple-700 hover:to-pink-700 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Creating account...' : 'Register'}
+              {loading ? t('creatingAccount') : t('register')}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-600 dark:text-gray-400 text-sm">
-              Already have an account?{' '}
+              {t('hasAccount')}{' '}
               <Link to="/login" className="text-purple-600 hover:text-purple-700 font-semibold">
-                Sign in here
+                {t('signInHere')}
               </Link>
             </p>
           </div>
