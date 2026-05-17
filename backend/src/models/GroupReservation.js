@@ -201,6 +201,35 @@ const GroupReservation = {
     return rows;
   },
 
+  // Past/finished groups the user led or was an approved member of
+  async findHistoryByUser(userId) {
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const nowTime = now.toTimeString().slice(0, 8);
+
+    const [rows] = await pool.execute(
+      `SELECT g.id, g.reservation_name AS name,
+              DATE_FORMAT(g.reservation_date, '%Y-%m-%d') AS date,
+              TIME_FORMAT(g.start_time, '%H:%i') AS startTime,
+              TIME_FORMAT(g.end_time, '%H:%i') AS endTime,
+              g.party_size AS partySize, g.current_count AS currentCount,
+              g.status,
+              CASE WHEN g.leader_user_id = ? THEN 'leader' ELSE 'member' END AS role
+       FROM group_reservations g
+       LEFT JOIN join_requests jr
+              ON jr.group_reservation_id = g.id
+             AND jr.user_id = ?
+             AND jr.status = 'approved'
+       WHERE (g.leader_user_id = ? OR jr.id IS NOT NULL)
+         AND (g.status = 'cancelled'
+              OR g.reservation_date < ?
+              OR (g.reservation_date = ? AND g.end_time <= ?))
+       ORDER BY g.reservation_date DESC, g.start_time DESC`,
+      [userId, userId, userId, today, today, nowTime]
+    );
+    return rows;
+  },
+
   // Update a group (leader only)
   async update(id, leaderUserId, { name, date, startTime, partySize, currentCount }) {
     const startTimeFull = startTime.length === 5 ? `${startTime}:00` : startTime;

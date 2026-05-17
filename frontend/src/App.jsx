@@ -6,6 +6,7 @@ import Register from './components/Register'
 import Dashboard from './components/Dashboard'
 import BrowseGroups from './components/BrowseGroups'
 import MyGroups from './components/MyGroups'
+import GroupHistory from './components/GroupHistory'
 import AdminReservations from './components/AdminReservations'
 import OccupancyDashboard from './components/OccupancyDashboard'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -48,6 +49,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <MyGroups />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/group-history"
+              element={
+                <ProtectedRoute>
+                  <GroupHistory />
                 </ProtectedRoute>
               }
             />

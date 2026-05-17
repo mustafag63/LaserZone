@@ -4,6 +4,7 @@ const {
   create,
   listOpen,
   listMine,
+  listHistory,
   getOne,
   update,
   cancel,
@@ -21,6 +22,7 @@ router.post('/',                              protect, create);
 router.get('/',                               protect, listOpen);
 router.get('/my',                             protect, listMine);
 router.get('/my-requests',                    protect, listMyRequests);
+router.get('/history',                        protect, listHistory);
 router.get('/:id',                            protect, getOne);
 router.put('/:id',                            protect, update);
 router.delete('/:id',                         protect, cancel);

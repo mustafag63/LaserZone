@@ -131,6 +131,17 @@ const listMine = async (req, res) => {
   }
 };
 
+// GET /api/groups/history
+const listHistory = async (req, res) => {
+  try {
+    const groups = await GroupReservation.findHistoryByUser(req.user.id);
+    return res.status(200).json({ groups });
+  } catch (err) {
+    console.error('[listGroupHistory]', err.message);
+    return res.status(500).json({ message: 'Internal server error.' });
+  }
+};
+
 // GET /api/groups/:id
 const getOne = async (req, res) => {
   try {
@@ -471,6 +482,7 @@ module.exports = {
   create,
   listOpen,
   listMine,
+  listHistory,
   getOne,
   update,
   cancel,

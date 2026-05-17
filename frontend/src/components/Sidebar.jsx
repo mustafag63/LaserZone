@@ -178,6 +178,23 @@ export default function Sidebar() {
           </svg>
           {!collapsed && t('myGroups')}
         </NavLink>
+
+        <NavLink
+          to="/group-history"
+          className={({ isActive }) =>
+            `flex items-center ${collapsed ? 'justify-center px-2' : 'gap-3 px-4'} py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              isActive
+                ? 'bg-purple-600 text-white'
+                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+            }`
+          }
+          title={collapsed ? t('groupHistory') : ''}
+        >
+          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {!collapsed && t('groupHistory')}
+        </NavLink>
       </nav>
 
       {/* Logout */}
